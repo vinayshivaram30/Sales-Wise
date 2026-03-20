@@ -58,7 +58,7 @@ export default function Layout() {
                 </svg>
               </div>
               <span className="text-lg font-bold tracking-tight text-white">
-                Sales-wise
+                Sales-Wise
               </span>
             </div>
 
