@@ -1,12 +1,12 @@
-// Content script for the CloseIt web app - receives token/callId from login and plan generation
+// Content script for the Sales-Wise web app - receives token/callId from login and plan generation
 (function() {
   // Forward postMessage from web app to extension
   window.addEventListener('message', (event) => {
     if (event.source !== window) return;
-    if (event.data?.type === 'CLOSEIT_SET_TOKEN') {
+    if (event.data?.type === 'SALESWISE_SET_TOKEN') {
       chrome.runtime.sendMessage({ type: 'SET_TOKEN', token: event.data.token }).catch(() => {});
     }
-    if (event.data?.type === 'CLOSEIT_SET_CALL') {
+    if (event.data?.type === 'SALESWISE_SET_CALL') {
       chrome.runtime.sendMessage({ type: 'SET_CALL', callId: event.data.callId }).catch(() => {});
     }
   });

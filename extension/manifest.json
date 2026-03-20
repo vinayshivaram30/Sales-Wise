@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "CloseIt",
+  "name": "Sales-Wise",
   "version": "0.1.0",
   "description": "Real-time sales coaching for Google Meet — close deals 10x faster",
   "permissions": [
@@ -14,11 +14,11 @@
     "https://meet.google.com/*",
     "https://*.railway.app/*",
     "http://localhost:8000/*",
-    "http://localhost:5173/*"
+    "http://localhost:*/*"
   ],
   "externally_connectable": {
     "matches": [
-      "http://localhost:5173/*",
+      "http://localhost:*/*",
       "https://*.vercel.app/*",
       "https://*.railway.app/*"
     ]
@@ -34,8 +34,8 @@
     },
     {
       "matches": [
-        "http://localhost:5173/*",
-        "http://127.0.0.1:5173/*",
+        "http://localhost:*/*",
+        "http://127.0.0.1:*/*",
         "https://*.vercel.app/*",
         "https://*.railway.app/*"
       ],
@@ -47,7 +47,7 @@
     "default_path": "sidepanel.html"
   },
   "action": {
-    "default_title": "CloseIt"
+    "default_title": "Sales-Wise"
   },
   "icons": {
     "128": "icons/icon128.png"
