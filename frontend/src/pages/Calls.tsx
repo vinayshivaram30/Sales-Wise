@@ -206,7 +206,7 @@ export default function Calls() {
                       }
                     </div>
                   </div>
-                  {detail.summary && (
+                  {!!detail.summary && (
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-wider text-[#8b8ba0] mb-2">
                         Summary

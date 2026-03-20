@@ -54,13 +54,32 @@ type PrecallContext = {
 };
 
 const defaultContext: PrecallContext = {
-  company: '', contact: '', sales_team_size: '', current_stack: '', known_pain: '', deal_stage: '',
-  deal_size_est: '', decision_timeline: '', economic_buyer: '', champion_likelihood: '',
-  product_name: '', category: '', core_value_proposition: '', pricing: '', key_differentiators: '', known_objections: '',
-  product_tags: [],
-  primary_goal: '', secondary_goal: '', demo_focus: '', objection_to_preempt: '', exit_criteria: '',
-  past_conversations: [],
-  open_objections_from_history: '',
+  company: 'Fieldmotion · B2B SaaS · Field service management · 220 employees',
+  contact: 'Priya Nair · VP of Sales · 4 yrs tenure · Reports to CRO',
+  sales_team_size: '8 AEs + 3 SDRs · Quota: $1.2M ARR/AE · ~68% attainment',
+  current_stack: 'Salesforce CRM · Outreach · Zoom · No coaching tool',
+  known_pain: 'Reps spend ~40 min/day on CRM updates. Pipeline reviews feel like guesswork.',
+  deal_stage: 'Stage 2 — Discovery (first call was SDR intro)',
+  deal_size_est: '$14,400–$28,800 ARR',
+  decision_timeline: 'Q3 budget cycle',
+  economic_buyer: 'CRO (not yet engaged)',
+  champion_likelihood: 'High — Priya raised pain unprompted',
+  product_name: 'Velaris (Revenue Intelligence Platform)',
+  category: 'B2B SaaS · Revenue Operations',
+  core_value_proposition: 'Consolidates pipeline, call recordings, CRM into single dashboard — eliminates manual updates',
+  pricing: '$180/seat/month · 5-seat minimum · Annual contract',
+  key_differentiators: 'Real-time live-call coaching vs Gong post-call only. Native Salesforce write-back.',
+  known_objections: 'Budget concerns, adoption friction, security/compliance',
+  product_tags: ['MEDDIC-aligned', 'Challenger sell', 'Economic buyer focus'],
+  primary_goal: 'Qualify economic buyer. Get Priya to commit to 3-way call with CRO.',
+  secondary_goal: 'Surface business impact of 68% attainment — translate pain to dollar figure.',
+  demo_focus: 'Show live-call coaching first (10 min). Defer CRM automation unless asked.',
+  objection_to_preempt: 'Address bad past experience with coaching tool proactively.',
+  exit_criteria: 'CRO intro scheduled, or Priya sends business case email. No "I\'ll think about it".',
+  past_conversations: [
+    { date: '14 Mar 2026', type: 'SDR intro call', duration: '18 min', channel: 'Zoom', content: 'Priya mentioned reps waste time on CRM. Interested in live coaching.', outcome: 'Demo booked' }
+  ],
+  open_objections_from_history: 'Bad past experience with a coaching tool · Economic buyer not looped in yet',
 };
 
 function SectionCard({ title, required, children }: { title: string; required?: boolean; children: React.ReactNode }) {
@@ -114,6 +133,7 @@ export default function PreCall() {
   const [loading, setLoading] = useState(false);
   const [planError, setPlanError] = useState('');
   const [callIdState, setCallIdState] = useState<string | null>(callId || null);
+  const [meetUrl, setMeetUrl] = useState('');
 
   useEffect(() => {
     if (callId) setCallIdState(callId);
@@ -216,8 +236,14 @@ export default function PreCall() {
 
   function launchCopilot() {
     if (!callIdState) return;
-    window.postMessage({ type: 'COPILOT_START', callId: callIdState }, '*');
-    alert(`Open Google Meet, then click the Sales-wise extension icon to select this call and start.`);
+    localStorage.setItem('active_call_id', callIdState);
+    window.postMessage({ type: 'SALESWISE_SET_CALL', callId: callIdState }, '*');
+    const url = meetUrl.trim();
+    if (url && url.includes('meet.google.com')) {
+      window.open(url, '_blank');
+    } else {
+      window.open('https://meet.google.com', '_blank');
+    }
   }
 
   const set = (k: keyof PrecallContext) => (v: string | string[]) => setCtx(prev => ({ ...prev, [k]: v }));
@@ -352,7 +378,7 @@ export default function PreCall() {
           {/* Right: Call plan output */}
           <div style={{ position: 'sticky', top: 24 }}>
             {!plan && <div style={{ color: DARK.label, marginTop: 60, textAlign: 'center' }}>Fill in required context and generate your plan</div>}
-            {plan && (
+            {!!plan && (
               <div style={{ background: DARK.card, borderRadius: 12, padding: 20, border: `1px solid ${DARK.border}` }}>
                 <h2 style={{ marginBottom: 16, fontSize: 18 }}>Call plan</h2>
                 <div style={{ marginBottom: 20 }}>
@@ -384,9 +410,21 @@ export default function PreCall() {
                     <p style={{ margin: 0, fontSize: 13, color: DARK.text }}>{String(plan.watch_for)}</p>
                   </div>
                 )}
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 11, color: DARK.label, display: 'block', marginBottom: 4 }}>Google Meet link</label>
+                  <input
+                    value={meetUrl}
+                    onChange={e => setMeetUrl(e.target.value)}
+                    placeholder="https://meet.google.com/abc-defg-hij"
+                    style={{ width: '100%', padding: 10, background: DARK.field, border: `1px solid ${DARK.border}`, borderRadius: 8, color: DARK.text, fontSize: 13, boxSizing: 'border-box' }}
+                  />
+                  <p style={{ fontSize: 10, color: DARK.label, marginTop: 4 }}>
+                    Paste your Meet link, or leave blank to open meet.google.com
+                  </p>
+                </div>
                 <button onClick={launchCopilot}
                   style={{ width: '100%', padding: 12, background: DARK.green, color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-                  Start copilot when call begins →
+                  Join Meet &amp; start copilot →
                 </button>
               </div>
             )}
