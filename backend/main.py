@@ -10,7 +10,12 @@ app = FastAPI(title="CloseIt - Sales Copilot API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.getenv("FRONTEND_URL", "http://localhost:5173"), "chrome-extension://*", "http://localhost:5173"],
+    allow_origins=[
+        os.getenv("FRONTEND_URL", "http://localhost:5173"),
+        "https://sales-wise.vercel.app",
+        "http://localhost:5173",
+        "chrome-extension://*",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

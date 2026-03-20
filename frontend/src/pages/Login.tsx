@@ -4,25 +4,29 @@ import { GoogleLogin } from "@react-oauth/google";
 export default function Login() {
   const [loginError, setLoginError] = useState('');
   async function handleSuccess(cred: { credential?: string }) {
-    const res = await fetch(
-      `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/auth/google`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ access_token: cred.credential }),
-      }
-    );
-    const text = await res.text();
-    const data = text ? JSON.parse(text) : {};
-    if (!res.ok) throw new Error(data.detail || `Login failed (${res.status})`);
-    localStorage.setItem("token", data.access_token);
-    localStorage.setItem("user", JSON.stringify(data.user));
-    // Notify extension via postMessage (content-app.js forwards to extension)
-    window.postMessage(
-      { type: "SALESWISE_SET_TOKEN", token: data.access_token },
-      "*"
-    );
-    window.location.href = "/dashboard";
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/auth/google`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ access_token: cred.credential }),
+        }
+      );
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : {};
+      if (!res.ok) throw new Error(data.detail || `Login failed (${res.status})`);
+      localStorage.setItem("token", data.access_token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      // Notify extension via postMessage (content-app.js forwards to extension)
+      window.postMessage(
+        { type: "SALESWISE_SET_TOKEN", token: data.access_token },
+        "*"
+      );
+      window.location.href = "/dashboard";
+    } catch (err: any) {
+      setLoginError(err.message || "Login failed. Please try again.");
+    }
   }
 
   return (
