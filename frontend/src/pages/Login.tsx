@@ -3,10 +3,15 @@ import { GoogleLogin } from "@react-oauth/google";
 
 export default function Login() {
   const [loginError, setLoginError] = useState('');
+  const [loginStatus, setLoginStatus] = useState('');
+
   async function handleSuccess(cred: { credential?: string }) {
     try {
+      setLoginStatus("Signing in...");
+      setLoginError('');
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/auth/google`,
+        `${apiUrl}/auth/google`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -24,8 +29,10 @@ export default function Login() {
         { type: "SALESWISE_SET_TOKEN", token: data.access_token },
         "*"
       );
+      setLoginStatus("Redirecting...");
       window.location.href = "/dashboard";
     } catch (err: any) {
+      setLoginStatus('');
       setLoginError(err.message || "Login failed. Please try again.");
     }
   }
@@ -76,12 +83,14 @@ export default function Login() {
           <div className="flex justify-center">
             <GoogleLogin
               onSuccess={handleSuccess}
-              onError={() => setLoginError("Login failed. Please try again.")}
+              onError={() => setLoginError("Google sign-in failed. Check pop-up blocker or try again.")}
               theme="filled_black"
               shape="pill"
               size="large"
+              ux_mode="popup"
             />
           </div>
+          {loginStatus && <p className="mt-3 text-center text-sm text-indigo-400">{loginStatus}</p>}
           {loginError && <p className="mt-3 text-center text-sm text-red-400">{loginError}</p>}
         </div>
 
