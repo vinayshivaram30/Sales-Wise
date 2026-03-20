@@ -1,80 +1,181 @@
-import { useState, useRef, useEffect } from 'react';
-import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
+import { useState, useRef, useEffect } from "react";
+import { Outlet, NavLink, Navigate, useNavigate } from "react-router-dom";
 
 export default function Layout() {
-  const loc = useLocation();
+  const token = localStorage.getItem("token");
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (!localStorage.getItem('token')) return <Navigate to="/login" replace />;
+  if (!token) return <Navigate to="/login" replace />;
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const initials = (user?.name || 'U').split(' ').map((s: string) => s[0]).join('').slice(0, 2).toUpperCase();
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const initials = (user?.name || "U")
+    .split(" ")
+    .map((s: string) => s[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   function handleLogout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.postMessage({ type: 'CLOSEIT_SET_TOKEN', token: '' }, '*');
-    window.location.href = '/login';
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.postMessage({ type: "SALESWISE_SET_TOKEN", token: "" }, "*");
+    navigate("/login");
   }
 
-  const nav = [
-    { path: '/dashboard', label: 'Dashboard' },
-    { path: '/calls', label: 'Calls' },
-  ];
   return (
-    <div style={{ minHeight: '100vh', background: '#f8f9fa' }}>
-      <nav style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '12px 24px', display: 'flex', gap: 24, alignItems: 'center' }}>
-        <Link to="/dashboard" style={{ fontSize: 18, fontWeight: 700, color: '#4F46E5', textDecoration: 'none' }}>CloseIt</Link>
-        {nav.map(({ path, label }) => (
-          <Link key={path} to={path} style={{
-            textDecoration: 'none', fontSize: 14, fontWeight: 500,
-            color: loc.pathname.startsWith(path) ? '#4F46E5' : '#6b7280'
-          }}>{label}</Link>
-        ))}
-        <div ref={menuRef} style={{ marginLeft: 'auto', position: 'relative' }}>
-          <button
-            onClick={() => setMenuOpen(o => !o)}
-            style={{
-              width: 36, height: 36, borderRadius: '50%', border: 'none', cursor: 'pointer',
-              background: '#4F46E5', color: '#fff', fontSize: 13, fontWeight: 600,
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}
-            title={user?.name || 'User'}
-          >
-            {initials}
-          </button>
-          {menuOpen && (
-            <div style={{
-              position: 'absolute', right: 0, top: '100%', marginTop: 6,
-              background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-              minWidth: 160, padding: '6px 0', zIndex: 50
-            }}>
-              <div style={{ padding: '8px 14px', fontSize: 13, color: '#374151', borderBottom: '1px solid #f3f4f6' }}>
-                {user?.name || 'User'}
+    <div className="min-h-screen bg-[#0a0a0f] text-gray-100 font-['Plus_Jakarta_Sans',sans-serif]">
+      {/* Navbar */}
+      <nav className="sticky top-0 z-50 bg-[#12121a] border-b border-[#2a2a3a]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center">
+                <svg
+                  className="w-5 h-5 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                  />
+                </svg>
               </div>
-              <button
-                onClick={handleLogout}
-                style={{
-                  display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left',
-                  fontSize: 13, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer'
-                }}
-              >
-                Log out
-              </button>
+              <span className="text-lg font-bold tracking-tight text-white">
+                Sales-wise
+              </span>
             </div>
-          )}
+
+            {/* Nav Links */}
+            <div className="flex items-center gap-1">
+              <NavLink
+                to="/dashboard"
+                className={({ isActive }) =>
+                  `relative px-4 py-5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "text-indigo-400"
+                      : "text-gray-400 hover:text-gray-200"
+                  }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    Dashboard
+                    {isActive && (
+                      <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-indigo-500 rounded-full" />
+                    )}
+                  </>
+                )}
+              </NavLink>
+              <NavLink
+                to="/calls"
+                className={({ isActive }) =>
+                  `relative px-4 py-5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "text-indigo-400"
+                      : "text-gray-400 hover:text-gray-200"
+                  }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    Calls
+                    {isActive && (
+                      <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-indigo-500 rounded-full" />
+                    )}
+                  </>
+                )}
+              </NavLink>
+            </div>
+
+            {/* User Avatar Dropdown */}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen((prev) => !prev)}
+                className="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-white/5 transition-colors"
+                title={user?.name || "User"}
+              >
+                <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-xs font-semibold text-white">
+                  {initials}
+                </div>
+                <span className="hidden sm:block text-sm text-gray-300 max-w-[140px] truncate">
+                  {user?.name || "User"}
+                </span>
+                <svg
+                  className={`w-4 h-4 text-gray-500 transition-transform ${
+                    menuOpen ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+
+              {menuOpen && (
+                <div className="absolute right-0 mt-2 w-56 rounded-xl bg-[#1a1a25] border border-[#2a2a3a] shadow-xl shadow-black/40 py-1">
+                  <div className="px-4 py-3 border-b border-[#2a2a3a]">
+                    <p className="text-sm font-medium text-white truncate">
+                      {user?.name || "User"}
+                    </p>
+                    {user?.email && (
+                      <p className="text-xs text-gray-500 truncate mt-0.5">
+                        {user.email}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                      />
+                    </svg>
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </nav>
-      <Outlet />
+
+      {/* Page Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Outlet />
+      </main>
     </div>
   );
 }

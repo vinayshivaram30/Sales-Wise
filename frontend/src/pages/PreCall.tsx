@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { generatePlan, getPlan, updateCall, getCallDetail } from '../lib/api';
+import CallProgressBar from '../components/CallProgressBar';
 
 const MEDDIC_LABELS: Record<string, string> = {
   metrics: 'Metrics', econ_buyer: 'Economic buyer',
@@ -111,6 +112,7 @@ export default function PreCall() {
   const [ctx, setCtx] = useState<PrecallContext>(defaultContext);
   const [plan, setPlan] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(false);
+  const [planError, setPlanError] = useState('');
   const [callIdState, setCallIdState] = useState<string | null>(callId || null);
 
   useEffect(() => {
@@ -158,6 +160,7 @@ export default function PreCall() {
 
   async function handleGenerate() {
     setLoading(true);
+    setPlanError('');
     try {
       const cid = callIdState!;
       await updateCall(cid, {
@@ -189,7 +192,9 @@ export default function PreCall() {
       const p = await generatePlan(cid);
       setPlan(p);
       localStorage.setItem('active_call_id', cid);
-      window.postMessage({ type: 'CLOSEIT_SET_CALL', callId: cid }, '*');
+      window.postMessage({ type: 'SALESWISE_SET_CALL', callId: cid }, '*');
+    } catch (err) {
+      setPlanError(err instanceof Error ? err.message : 'Failed to generate plan');
     } finally {
       setLoading(false);
     }
@@ -212,7 +217,7 @@ export default function PreCall() {
   function launchCopilot() {
     if (!callIdState) return;
     window.postMessage({ type: 'COPILOT_START', callId: callIdState }, '*');
-    alert(`Open Google Meet, then click the CloseIt extension icon to select this call and start.`);
+    alert(`Open Google Meet, then click the Sales-wise extension icon to select this call and start.`);
   }
 
   const set = (k: keyof PrecallContext) => (v: string | string[]) => setCtx(prev => ({ ...prev, [k]: v }));
@@ -222,6 +227,8 @@ export default function PreCall() {
   if (!callIdState) return <div style={{ padding: 32, color: DARK.text }}>No call selected. <Link to="/calls" style={{ color: DARK.accent }}>Back to calls</Link></div>;
 
   return (
+    <>
+    <CallProgressBar current="precall" />
     <div style={{ minHeight: '100vh', background: DARK.bg, padding: 32, color: DARK.text }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ marginBottom: 24 }}>
@@ -335,6 +342,11 @@ export default function PreCall() {
               style={{ width: '100%', padding: 14, background: DARK.accent, color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
               {loading ? 'Generating...' : 'Generate call plan'}
             </button>
+            {planError && (
+              <div style={{ marginTop: 12, padding: 12, background: `${DARK.red}22`, border: `1px solid ${DARK.red}66`, borderRadius: 8 }}>
+                <p style={{ margin: 0, fontSize: 13, color: DARK.red }}>{planError}</p>
+              </div>
+            )}
           </div>
 
           {/* Right: Call plan output */}
@@ -382,5 +394,6 @@ export default function PreCall() {
         </div>
       </div>
     </div>
+    </>
   );
 }

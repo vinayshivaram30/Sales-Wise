@@ -1,6 +1,6 @@
 // Update API_BASE and WS_BASE before deploying
-const API_BASE = "https://closeit-production.up.railway.app";
-const WS_BASE = "wss://closeit-production.up.railway.app";
+const API_BASE = "https://backend-production-71f1.up.railway.app";
+const WS_BASE = "wss://backend-production-71f1.up.railway.app";
 
 let ws = null;
 let callId = null;
@@ -95,7 +95,7 @@ function startWebSocket(cid, token) {
   ws = new WebSocket(`${WS_BASE}/ws/call/${cid}?token=${token}`);
 
   ws.onopen = () => {
-    console.log('[CloseIt] WebSocket connected');
+    console.log('[Sales-wise] WebSocket connected');
     broadcastToSidepanel({ type: 'WS_CONNECTED' });
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]) {
@@ -110,12 +110,12 @@ function startWebSocket(cid, token) {
   };
 
   ws.onclose = () => {
-    console.log('[CloseIt] WebSocket closed');
+    console.log('[Sales-wise] WebSocket closed');
     broadcastToSidepanel({ type: 'WS_DISCONNECTED' });
   };
 
   ws.onerror = (e) => {
-    console.error('[CloseIt] WebSocket error', e);
+    console.error('[Sales-wise] WebSocket error', e);
     broadcastToSidepanel({ type: 'WS_ERROR' });
   };
 }
