@@ -27,15 +27,12 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center px-4 font-['Plus_Jakarta_Sans',sans-serif]">
-      {/* Subtle gradient accent */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
-
       <div className="relative w-full max-w-md">
         {/* Card */}
         <div className="bg-[#12121a] border border-[#2a2a3a] rounded-2xl p-10 shadow-2xl shadow-black/40">
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-indigo-500 flex items-center justify-center mb-5 shadow-lg shadow-indigo-500/20">
+            <div className="w-14 h-14 rounded-2xl bg-indigo-500 flex items-center justify-center mb-5">
               <svg
                 className="w-8 h-8 text-white"
                 fill="none"
@@ -50,7 +47,7 @@ export default function Login() {
                 />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">
+            <h1 className="text-2xl font-bold text-white tracking-tight font-[Satoshi,sans-serif]">
               Sales-wise
             </h1>
             <p className="text-indigo-400 text-sm font-medium mt-2">
