@@ -47,8 +47,8 @@ export default function Login() {
                 />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight font-[Satoshi,sans-serif]">
-              Sales-wise
+            <h1 className="text-[32px] font-bold text-white tracking-[-0.02em] font-[Satoshi,sans-serif]">
+              Sales-Wise
             </h1>
             <p className="text-indigo-400 text-sm font-medium mt-2">
               Your AI co-pilot for live sales calls
