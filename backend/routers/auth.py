@@ -56,7 +56,9 @@ async def google_auth(body: GoogleToken, response: Response):
             raise HTTPException(status_code=502, detail=f"Supabase request failed: {str(e)}")
 
     if resp.status_code != 200:
-        err = resp.json() if resp.text else {}
+        err_text = resp.text
+        print(f"DEBUG: Supabase error body: {err_text}")
+        err = resp.json() if err_text else {}
         print(f"DEBUG: Supabase error: {err}")
         raise HTTPException(status_code=401, detail=err.get("error_description", err.get("msg", "Login failed")))
 

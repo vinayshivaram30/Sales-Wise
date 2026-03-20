@@ -11,9 +11,10 @@ app = FastAPI(title="Sales-Wise API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        os.getenv("FRONTEND_URL", "http://localhost:5173"),
+        os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/"),
         "https://sales-wise.vercel.app",
         "http://localhost:5173",
+        "http://127.0.0.1:5173",
         "chrome-extension://*",
     ],
     allow_credentials=True,
