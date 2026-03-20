@@ -1,0 +1,58 @@
+{
+  "manifest_version": 3,
+  "name": "CloseIt",
+  "version": "0.1.0",
+  "description": "Real-time sales coaching for Google Meet — close deals 10x faster",
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "tabs",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://meet.google.com/*",
+    "https://*.railway.app/*",
+    "http://localhost:8000/*",
+    "http://localhost:5173/*"
+  ],
+  "externally_connectable": {
+    "matches": [
+      "http://localhost:5173/*",
+      "https://*.vercel.app/*",
+      "https://*.railway.app/*"
+    ]
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "http://localhost:5173/*",
+        "http://127.0.0.1:5173/*",
+        "https://*.vercel.app/*",
+        "https://*.railway.app/*"
+      ],
+      "js": ["content-app.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "CloseIt"
+  },
+  "icons": {
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    { "resources": ["audio-processor.js"], "matches": ["https://meet.google.com/*"] }
+  ]
+}

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CloseIt</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    body { background: #f8f9fa; font-size: 13px; color: #1a1a1a; }
+    #header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; }
+    #status-dot { width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; margin-right: 8px; display: inline-block; }
+    #status-dot.live { background: #ef4444; animation: pulse 1.4s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+    #meddic { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 10px 14px; }
+    .med-pill { font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 600; display: inline-block; margin: 2px; }
+    .med-open { background: #f3f4f6; color: #6b7280; }
+    .med-done { background: #dcfce7; color: #15803d; }
+    .med-active { background: #fef3c7; color: #92400e; }
+    #suggestion-area { padding: 12px; }
+    .sug-card { background: #fff; border: 1.5px solid #4F46E5; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+    .sug-tag { font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 8px; background: #eef2ff; color: #4F46E5; }
+    .sug-why { font-size: 11px; color: #6b7280; margin: 5px 0; }
+    .sug-q { font-size: 13px; color: #111; line-height: 1.5; margin-bottom: 10px; }
+    .sug-btns { display: flex; gap: 6px; }
+    .sug-btns button { flex: 1; padding: 6px; font-size: 11px; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; background: #fff; }
+    .sug-btns .btn-used { background: #f0fdf4; color: #15803d; border-color: #86efac; }
+    .obj-card { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
+    .obj-label { font-size: 10px; font-weight: 600; color: #92400e; margin-bottom: 4px; }
+    .obj-resp { background: #fff; border-radius: 6px; padding: 7px 9px; font-size: 12px; color: #374151; margin-top: 6px; line-height: 1.5; }
+    #transcript { background: #fff; border-top: 1px solid #e5e7eb; padding: 10px 14px; margin-top: 10px; }
+    .tx-line { font-size: 11px; line-height: 1.6; color: #374151; margin-bottom: 3px; }
+    .tx-rep { color: #4F46E5; font-weight: 500; }
+    #start-btn { width: calc(100% - 28px); margin: 14px; padding: 10px; background: #4F46E5; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    #end-btn { width: calc(100% - 28px); margin: 14px; padding: 10px; background: #dc2626; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: none; }
+    #audio-warning { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 12px; margin: 10px 14px; font-size: 12px; color: #991b1b; display: none; }
+    #login-msg { background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 12px 14px; margin: 14px; font-size: 12px; color: #92400e; }
+    #call-select-wrap { padding: 10px 14px; background: #fff; border-bottom: 1px solid #e5e7eb; }
+    #call-select-wrap select { width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; }
+    #postcall-summary { padding: 12px 14px; background: #fff; }
+    .summary-section { margin-bottom: 14px; }
+    .summary-section h4 { font-size: 10px; font-weight: 600; color: #6b7280; text-transform: uppercase; margin-bottom: 6px; }
+    .summary-section p, .summary-section ul { font-size: 12px; line-height: 1.5; color: #374151; margin: 0; }
+    .summary-section ul { padding-left: 16px; }
+  </style>
+</head>
+<body>
+  <div id="header">
+    <div style="display:flex;align-items:center">
+      <span id="status-dot"></span>
+      <span id="status-text" style="font-size:12px;font-weight:500">Not started</span>
+    </div>
+    <span id="call-info" style="font-size:11px;color:#6b7280"></span>
+  </div>
+
+  <div id="login-msg" style="display:none">
+    Log in to the web app first, then refresh this panel.
+  </div>
+
+  <div id="call-select-wrap" style="display:none">
+    <select id="call-select">
+      <option value="">Select a call...</option>
+    </select>
+  </div>
+
+  <div id="meddic" style="display:none">
+    <p style="font-size:10px;font-weight:600;color:#6b7280;margin-bottom:6px">MEDDIC coverage</p>
+    <div id="meddic-pills"></div>
+  </div>
+
+  <div id="audio-warning">
+    You didn't share tab audio. Click "Stop sharing", then click the extension again and check "Share tab audio" in the Chrome dialog.
+  </div>
+
+  <button id="start-btn" style="display:none">Start copilot for this call</button>
+  <button id="end-btn">End call & generate summary</button>
+
+  <div id="postcall-summary" style="display:none"></div>
+
+  <div id="suggestion-area"></div>
+
+  <div id="transcript" style="display:none">
+    <p style="font-size:10px;font-weight:600;color:#6b7280;margin-bottom:6px">Live transcript</p>
+    <div id="transcript-lines"></div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="sidepanel.js"></script>
+</body>
+</html>
