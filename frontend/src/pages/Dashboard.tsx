@@ -68,8 +68,8 @@ export default function Dashboard() {
     switch (status) {
       case 'live':
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+          <span className="inline-flex items-center gap-1 rounded-full bg-[#f97316]/15 px-2.5 py-0.5 text-xs font-medium text-[#f97316]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#f97316] animate-pulse" />
             Live
           </span>
         );
@@ -104,7 +104,7 @@ export default function Dashboard() {
     <div className="mx-auto max-w-5xl px-6 py-10">
       {/* Welcome header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#e8e8f0]">
+        <h1 className="text-3xl font-bold text-[#e8e8f0] font-[Satoshi,sans-serif]">
           Welcome back, {user.name || 'there'}
         </h1>
         <p className="mt-1 text-[#8b8ba0]">{today}</p>
@@ -146,7 +146,7 @@ export default function Dashboard() {
             <Phone className="h-4 w-4" />
             <span className="text-sm">Total Calls</span>
           </div>
-          <p className="text-3xl font-bold text-[#e8e8f0]">
+          <p className="text-3xl font-bold text-[#e8e8f0] font-['Geist_Mono',monospace] tabular-nums">
             {loading ? '--' : totalCalls}
           </p>
         </div>
@@ -155,7 +155,7 @@ export default function Dashboard() {
             <Clock className="h-4 w-4" />
             <span className="text-sm">Active</span>
           </div>
-          <p className="text-3xl font-bold text-green-400">
+          <p className="text-3xl font-bold text-[#f97316] font-['Geist_Mono',monospace] tabular-nums">
             {loading ? '--' : activeCalls}
           </p>
         </div>
@@ -164,7 +164,7 @@ export default function Dashboard() {
             <CheckCircle className="h-4 w-4" />
             <span className="text-sm">Completed</span>
           </div>
-          <p className="text-3xl font-bold text-[#e8e8f0]">
+          <p className="text-3xl font-bold text-[#e8e8f0] font-['Geist_Mono',monospace] tabular-nums">
             {loading ? '--' : completedCalls}
           </p>
         </div>
@@ -195,8 +195,12 @@ export default function Dashboard() {
             ))}
           </div>
         ) : recentCalls.length === 0 ? (
-          <div className="px-6 py-12 text-center text-[#8b8ba0]">
-            No calls yet. Start your first call above.
+          <div className="px-6 py-16 text-center">
+            <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-[#1a1a25] flex items-center justify-center">
+              <Phone className="h-5 w-5 text-[#6b6b80]" />
+            </div>
+            <p className="text-[#8b8ba0] text-sm mb-1">No calls yet</p>
+            <p className="text-[#6b6b80] text-xs">Enter a call name above and hit "Start New Call" to begin.</p>
           </div>
         ) : (
           <ul className="divide-y divide-[#2a2a3a]">
