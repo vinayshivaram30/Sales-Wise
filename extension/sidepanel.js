@@ -59,17 +59,70 @@ async function loadCallsDropdown() {
   updateUI();
 }
 
-updateFromStorage();
+// Initialize: try storage first, then auto-fetch from web app tabs
+function init() {
+  chrome.storage.local.get(['token', 'active_call_id'], (res) => {
+    token = res.token;
+    callId = res.active_call_id;
 
+    if (token) {
+      updateUI();
+      loadCallsDropdown();
+    } else {
+      // Token not in extension storage — pull from web app tab automatically
+      chrome.runtime.sendMessage({ type: 'FETCH_APP_DATA' }, (response) => {
+        if (chrome.runtime.lastError) {
+          updateUI();
+          return;
+        }
+        if (response?.ok) {
+          chrome.storage.local.get(['token', 'active_call_id'], (r) => {
+            token = r.token;
+            callId = r.active_call_id;
+            updateUI();
+            if (token) loadCallsDropdown();
+          });
+        } else {
+          updateUI();
+        }
+      });
+    }
+  });
+}
+
+init();
+
+// React to storage changes (e.g. user logs in while panel is open)
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && (changes.active_call_id || changes.token)) {
-    updateFromStorage();
+  if (area === 'local') {
+    if (changes.token) token = changes.token.newValue;
+    if (changes.active_call_id) {
+      callId = changes.active_call_id.newValue;
+    }
+    updateUI();
+    if (token && changes.token) loadCallsDropdown();
   }
 });
 
-// Load calls on init
-chrome.storage.local.get(['token'], (res) => {
-  if (res.token) loadCallsDropdown();
+document.getElementById('retry-btn').addEventListener('click', init);
+
+function showStatus(msg) {
+  const el = document.getElementById('status-msg');
+  if (el) { el.textContent = msg; el.style.display = msg ? 'block' : 'none'; }
+}
+
+function sendManualTranscript() {
+  const input = document.getElementById('manual-input');
+  const text = input.value.trim();
+  if (!text) return;
+  showStatus('Sending to AI...');
+  chrome.runtime.sendMessage({ type: 'MANUAL_TRANSCRIPT', text });
+  input.value = '';
+}
+
+document.getElementById('manual-send').addEventListener('click', sendManualTranscript);
+document.getElementById('manual-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') sendManualTranscript();
 });
 
 document.getElementById('call-select').addEventListener('change', (e) => {
@@ -148,9 +201,12 @@ document.getElementById('end-btn').addEventListener('click', async () => {
       document.getElementById('call-select-wrap').style.display = 'block';
       document.getElementById('meddic').style.display = 'none';
       document.getElementById('transcript').style.display = 'none';
-      document.getElementById('suggestion-area').innerHTML = '';
+      document.getElementById('manual-input-wrap').style.display = 'none';
+      const sugArea = document.getElementById('suggestion-area');
+      while (sugArea.firstChild) sugArea.removeChild(sugArea.firstChild);
       const txLines = document.getElementById('transcript-lines');
-      if (txLines) txLines.innerHTML = '';
+      if (txLines) while (txLines.firstChild) txLines.removeChild(txLines.firstChild);
+      showStatus('');
       setLive(false);
     })();
   });
@@ -188,22 +244,47 @@ function renderPostCallSummary(detail) {
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === 'WS_CONNECTED') {
     setLive(true);
+    showStatus('Connected. Waiting for audio or type below to test...');
     document.getElementById('meddic').style.display = 'block';
     document.getElementById('transcript').style.display = 'block';
     document.getElementById('end-btn').style.display = 'block';
+    document.getElementById('manual-input-wrap').style.display = 'block';
     document.getElementById('postcall-summary').style.display = 'none';
   }
 
-  if (msg.type === 'WS_DISCONNECTED' || msg.type === 'WS_ERROR') {
+  if (msg.type === 'WS_DISCONNECTED') {
     document.getElementById('end-btn').style.display = 'none';
+    document.getElementById('manual-input-wrap').style.display = 'none';
+    showStatus('Disconnected from server.');
+    setLive(false);
+  }
+
+  if (msg.type === 'WS_ERROR') {
+    document.getElementById('end-btn').style.display = 'none';
+    document.getElementById('manual-input-wrap').style.display = 'none';
+    showStatus('WebSocket error — check if the backend is running.');
     setLive(false);
   }
 
   if (msg.type === 'AUDIO_MISSING_CHECKBOX') {
     document.getElementById('audio-warning').style.display = 'block';
+    showStatus('No tab audio detected. Use the text input below to test.');
+  }
+
+  if (msg.type === 'AUDIO_CAPTURE_FAILED') {
+    showStatus(msg.error || 'Audio capture failed. Use the text input below to test.');
+  }
+
+  if (msg.type === 'error') {
+    showStatus('Error: ' + (msg.message || 'Unknown error'));
+  }
+
+  if (msg.type === 'call_plan') {
+    renderCallPlan(msg.payload);
   }
 
   if (msg.type === 'suggestion') {
+    showStatus('');
     renderSuggestion(msg.payload);
   }
 
@@ -277,6 +358,37 @@ function renderObjection(o) {
     <p class="obj-label" style="margin-top:6px">Suggested response</p>
     <p class="obj-resp">${o.response}</p>`;
   area.prepend(card);
+}
+
+function renderCallPlan(plan) {
+  const area = document.getElementById('suggestion-area');
+  const questions = plan.questions || [];
+  if (questions.length === 0) return;
+
+  const planDiv = document.createElement('div');
+  planDiv.id = 'plan-questions';
+  planDiv.style.cssText = 'background:#f0f4ff;border:1px solid #c7d2fe;border-radius:8px;padding:10px 12px;margin-bottom:10px';
+  planDiv.innerHTML = '<p style="font-size:10px;font-weight:600;color:#4F46E5;margin-bottom:8px;text-transform:uppercase">Pre-call plan — Questions to ask</p>';
+
+  questions.forEach((q, i) => {
+    const qDiv = document.createElement('div');
+    qDiv.style.cssText = 'margin-bottom:6px;font-size:12px;line-height:1.5;color:#1e1b4b';
+    qDiv.textContent = `${i + 1}. ${q.question}`;
+    const tag = document.createElement('span');
+    tag.style.cssText = 'font-size:9px;font-weight:600;padding:1px 5px;border-radius:6px;background:#eef2ff;color:#4F46E5;margin-left:6px';
+    tag.textContent = MEDDIC_LABELS[q.meddic_field] || q.meddic_field;
+    qDiv.appendChild(tag);
+    planDiv.appendChild(qDiv);
+  });
+
+  if (plan.watch_for) {
+    const wf = document.createElement('p');
+    wf.style.cssText = 'font-size:11px;color:#92400e;margin-top:8px;padding-top:6px;border-top:1px solid #c7d2fe';
+    wf.textContent = 'Watch for: ' + plan.watch_for;
+    planDiv.appendChild(wf);
+  }
+
+  area.prepend(planDiv);
 }
 
 function appendTranscript(text, speaker) {

@@ -18,14 +18,23 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 });
 
 async function startCapture() {
-  mediaStream = await navigator.mediaDevices.getDisplayMedia({
-    video: { displaySurface: 'browser' },
-    audio: {
-      systemAudio: 'include',
-      suppressLocalAudioPlayback: false
-    },
-    preferCurrentTab: true
-  });
+  try {
+    mediaStream = await navigator.mediaDevices.getDisplayMedia({
+      video: { displaySurface: 'browser' },
+      audio: {
+        systemAudio: 'include',
+        suppressLocalAudioPlayback: false
+      },
+      preferCurrentTab: true
+    });
+  } catch (err) {
+    console.error('[Sales-wise] getDisplayMedia failed:', err.name, err.message);
+    chrome.runtime.sendMessage({
+      type: 'AUDIO_CAPTURE_FAILED',
+      error: `Screen share failed: ${err.message}. Use the manual text input to test.`
+    });
+    return;
+  }
 
   const audioTracks = mediaStream.getAudioTracks();
   if (audioTracks.length === 0) {

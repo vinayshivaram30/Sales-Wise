@@ -31,6 +31,79 @@ async def websocket_call(websocket: WebSocket, call_id: str):
     audio_buf = bytearray()
     seq = 0
 
+    # Send pre-call plan questions to sidepanel on connect
+    if call_plan.get("questions"):
+        await websocket.send_json({
+            "type": "call_plan",
+            "payload": {
+                "questions": call_plan["questions"],
+                "meddic_gaps": call_plan.get("meddic_gaps", {}),
+                "watch_for": call_plan.get("watch_for", "")
+            }
+        })
+        log.info(f"Sent call plan with {len(call_plan['questions'])} questions")
+
+    async def process_transcript(transcript_text: str):
+        """Process a transcript chunk: store, generate suggestion, send to client."""
+        nonlocal seq
+
+        await websocket.send_json({"type": "transcript", "payload": {"text": transcript_text}})
+
+        seq += 1
+        supabase.table("transcript_chunks").insert({
+            "call_id": call_id,
+            "seq": seq,
+            "speaker": "unknown",
+            "text": transcript_text
+        }).execute()
+
+        session["chunk_buffer"].append(transcript_text)
+        if len(session["chunk_buffer"]) > 4:
+            session["chunk_buffer"].pop(0)
+
+        transcript_window = " ".join(session["chunk_buffer"])
+
+        try:
+            suggestion = await generate_suggestion(
+                transcript_window=transcript_window,
+                meddic_state=session["meddic_state"],
+                asked_questions=session["asked_questions"],
+                call_plan=call_plan
+            )
+        except Exception as e:
+            await websocket.send_json({"type": "error", "message": f"LLM failed: {e}"})
+            return
+
+        sug_res = supabase.table("suggestions").insert({
+            "call_id": call_id,
+            "seq": seq,
+            "question": suggestion["question"],
+            "meddic_field": suggestion["meddic_field"],
+            "why": suggestion["why"],
+            "confidence": suggestion.get("confidence", 0.8),
+            "status": "shown"
+        }).execute()
+
+        suggestion["id"] = sug_res.data[0]["id"]
+
+        session["asked_questions"].append(suggestion["question"])
+
+        field = suggestion["meddic_field"]
+        if field in session["meddic_state"] and session["meddic_state"][field] is None:
+            session["meddic_state"][field] = "in_progress"
+
+        await save_session(call_id, session)
+
+        await websocket.send_json({
+            "type": "suggestion",
+            "payload": suggestion
+        })
+
+        await websocket.send_json({
+            "type": "meddic_update",
+            "payload": session["meddic_state"]
+        })
+
     try:
         while True:
             message = await websocket.receive()
@@ -55,63 +128,7 @@ async def websocket_call(websocket: WebSocket, call_id: str):
                     if not transcript_text.strip():
                         continue
 
-                    # Send transcript to sidepanel for display
-                    await websocket.send_json({"type": "transcript", "payload": {"text": transcript_text}})
-
-                    seq += 1
-                    supabase.table("transcript_chunks").insert({
-                        "call_id": call_id,
-                        "seq": seq,
-                        "speaker": "unknown",
-                        "text": transcript_text
-                    }).execute()
-
-                    session["chunk_buffer"].append(transcript_text)
-                    if len(session["chunk_buffer"]) > 4:
-                        session["chunk_buffer"].pop(0)
-
-                    transcript_window = " ".join(session["chunk_buffer"])
-
-                    try:
-                        suggestion = await generate_suggestion(
-                            transcript_window=transcript_window,
-                            meddic_state=session["meddic_state"],
-                            asked_questions=session["asked_questions"],
-                            call_plan=call_plan
-                        )
-                    except Exception as e:
-                        await websocket.send_json({"type": "error", "message": f"LLM failed: {e}"})
-                        continue
-
-                    sug_res = supabase.table("suggestions").insert({
-                        "call_id": call_id,
-                        "seq": seq,
-                        "question": suggestion["question"],
-                        "meddic_field": suggestion["meddic_field"],
-                        "why": suggestion["why"],
-                        "confidence": suggestion.get("confidence", 0.8),
-                        "status": "shown"
-                    }).execute()
-
-                    suggestion["id"] = sug_res.data[0]["id"]
-
-                    session["asked_questions"].append(suggestion["question"])
-
-                    field = suggestion["meddic_field"]
-                    if field in session["meddic_state"] and session["meddic_state"][field] is None:
-                        session["meddic_state"][field] = "in_progress"
-
-                    await save_session(call_id, session)
-
-                    await websocket.send_json({
-                        "type": "suggestion",
-                        "payload": suggestion
-                    })
-
-                    await websocket.send_json({
-                        "type": "meddic_update",
-                        "payload": session["meddic_state"]
-                    })
+                    await process_transcript(transcript_text)
 
             elif "text" in message:
                 msg = json.loads(message["text"])
@@ -120,6 +137,12 @@ async def websocket_call(websocket: WebSocket, call_id: str):
                     supabase.table("suggestions").update(
                         {"status": msg["status"]}
                     ).eq("id", msg["suggestion_id"]).execute()
+
+                elif msg.get("type") == "manual_transcript":
+                    transcript_text = msg.get("text", "").strip()
+                    if transcript_text:
+                        log.info(f"Manual transcript: {transcript_text[:80]}...")
+                        await process_transcript(transcript_text)
 
                 elif msg.get("type") == "stop":
                     break

@@ -53,7 +53,8 @@
   </div>
 
   <div id="login-msg" style="display:none">
-    Log in to the web app first, then refresh this panel.
+    Log in to the Sales-Wise web app first, then click retry.
+    <button id="retry-btn" style="margin-top:8px;display:block;width:100%;padding:8px;background:#4F46E5;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Retry connection</button>
   </div>
 
   <div id="call-select-wrap" style="display:none">
@@ -73,6 +74,16 @@
 
   <button id="start-btn" style="display:none">Start copilot for this call</button>
   <button id="end-btn">End call & generate summary</button>
+
+  <div id="manual-input-wrap" style="display:none;padding:8px 14px;background:#fff;border-bottom:1px solid #e5e7eb">
+    <p style="font-size:10px;font-weight:600;color:#6b7280;margin-bottom:6px">Simulate speech (for testing)</p>
+    <div style="display:flex;gap:4px">
+      <input id="manual-input" placeholder="Type what was said on the call..." style="flex:1;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px" />
+      <button id="manual-send" style="padding:6px 12px;background:#4F46E5;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">Send</button>
+    </div>
+  </div>
+
+  <div id="status-msg" style="display:none;padding:8px 14px;font-size:11px;color:#6b7280;background:#f9fafb;border-bottom:1px solid #e5e7eb"></div>
 
   <div id="postcall-summary" style="display:none"></div>
 

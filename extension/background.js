@@ -60,6 +60,21 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
     return true;
   }
+  if (msg.type === 'AUDIO_CAPTURE_FAILED') {
+    broadcastToSidepanel({ type: 'AUDIO_CAPTURE_FAILED', error: msg.error });
+    return true;
+  }
+  if (msg.type === 'MANUAL_TRANSCRIPT') {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'manual_transcript',
+        text: msg.text
+      }));
+    } else {
+      broadcastToSidepanel({ type: 'error', message: 'WebSocket not connected. Start a call first.' });
+    }
+    return true;
+  }
   if (msg.type === 'FETCH_APP_DATA') {
     // Try all tabs - content script only responds from web app tabs
     chrome.tabs.query({}, (tabs) => {

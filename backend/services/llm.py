@@ -3,7 +3,7 @@ import json
 import os
 import re
 
-client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 
 def _extract_text(message) -> str:
@@ -114,7 +114,7 @@ Generate a call plan using the MEDDIC framework. Return ONLY valid JSON:
   "watch_for": "One sentence on likely objection or risk."
 }}"""
 
-    message = client.messages.create(
+    message = await client.messages.create(
         model="claude-sonnet-4-5",
         max_tokens=1024,
         messages=[{"role": "user", "content": prompt}]
@@ -159,7 +159,7 @@ Rules:
   "confidence": 0.85
 }}"""
 
-    message = client.messages.create(
+    message = await client.messages.create(
         model="claude-sonnet-4-5",
         max_tokens=256,
         messages=[{"role": "user", "content": prompt}]
@@ -204,7 +204,7 @@ Return ONLY valid JSON:
   ]
 }}"""
 
-    message = client.messages.create(
+    message = await client.messages.create(
         model="claude-sonnet-4-5",
         max_tokens=2048,
         messages=[{"role": "user", "content": prompt}]

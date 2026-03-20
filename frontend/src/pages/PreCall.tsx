@@ -404,7 +404,7 @@ export default function PreCall() {
                     </div>
                   ))}
                 </div>
-                {plan.watch_for && (
+                {!!plan.watch_for && (
                   <div style={{ background: `${DARK.orange}22`, border: `1px solid ${DARK.orange}66`, borderRadius: 8, padding: 12, marginBottom: 20 }}>
                     <p style={{ fontSize: 11, fontWeight: 600, color: DARK.orange, margin: '0 0 4px' }}>Watch for</p>
                     <p style={{ margin: 0, fontSize: 13, color: DARK.text }}>{String(plan.watch_for)}</p>
