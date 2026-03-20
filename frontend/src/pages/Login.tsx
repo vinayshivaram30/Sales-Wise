@@ -10,20 +10,24 @@ export default function Login() {
       setLoginStatus("Signing in...");
       setLoginError('');
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+      console.log("Login: Starting backend auth exchange...");
       const res = await fetch(
         `${apiUrl}/auth/google`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ access_token: cred.credential }),
+          body: JSON.stringify({ id_token: cred.credential }),
         }
       );
+      console.log("Login: Backend response status:", res.status);
       const text = await res.text();
+      console.log("Login: Backend response text:", text);
       const data = text ? JSON.parse(text) : {};
       if (!res.ok) throw new Error(data.detail || `Login failed (${res.status})`);
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("user", JSON.stringify(data.user));
+      console.log("Login: Tokens stored in localStorage");
       // Notify extension via postMessage (content-app.js forwards to extension)
       window.postMessage(
         { type: "SALESWISE_SET_TOKEN", token: data.access_token },

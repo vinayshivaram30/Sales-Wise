@@ -27,28 +27,37 @@ def _set_auth_cookie(response: Response, token: str):
 
 
 class GoogleToken(BaseModel):
-    access_token: str
+    id_token: str
 
 
 @router.post("/google")
 async def google_auth(body: GoogleToken, response: Response):
     """Exchange Google OAuth token for Supabase session via Auth REST API."""
+    print(f"DEBUG: Starting Google auth exchange for token (len: {len(body.id_token)})")
     if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
+        print("DEBUG: Supabase config missing")
         raise HTTPException(status_code=500, detail="Supabase not configured")
 
     async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.post(
-            f"{SUPABASE_URL}/auth/v1/token?grant_type=id_token",
-            headers={
-                "apikey": SUPABASE_SERVICE_KEY,
-                "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
-                "Content-Type": "application/json",
-            },
-            json={"provider": "google", "id_token": body.access_token},
-        )
+        try:
+            print(f"DEBUG: Calling Supabase URL: {SUPABASE_URL}/auth/v1/token?grant_type=id_token")
+            resp = await client.post(
+                f"{SUPABASE_URL}/auth/v1/token?grant_type=id_token",
+                headers={
+                    "apikey": SUPABASE_SERVICE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={"provider": "google", "id_token": body.id_token},
+            )
+            print(f"DEBUG: Supabase response status: {resp.status_code}")
+        except Exception as e:
+            print(f"DEBUG: Supabase request failed: {str(e)}")
+            raise HTTPException(status_code=502, detail=f"Supabase request failed: {str(e)}")
 
     if resp.status_code != 200:
         err = resp.json() if resp.text else {}
+        print(f"DEBUG: Supabase error: {err}")
         raise HTTPException(status_code=401, detail=err.get("error_description", err.get("msg", "Login failed")))
 
     data = resp.json()
