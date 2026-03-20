@@ -10,3 +10,4 @@ __pycache__/
 gstack/
 .gstack/
 .vercel
+.venv/

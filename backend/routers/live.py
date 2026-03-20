@@ -1,7 +1,8 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from services.stt import transcribe_chunk
 from services.llm import generate_suggestion
 from services.session import get_session, save_session
+from auth_utils import get_user_id_from_token
 from db import supabase
 from datetime import datetime, timezone
 import json
@@ -17,7 +18,19 @@ CHUNK_BYTES = CHUNK_DURATION_S * SAMPLE_RATE * BYTES_PER_SAMPLE
 
 
 @router.websocket("/call/{call_id}")
-async def websocket_call(websocket: WebSocket, call_id: str):
+async def websocket_call(websocket: WebSocket, call_id: str, token: str = Query("")):
+    # Verify auth before accepting connection
+    user_id = get_user_id_from_token(token)
+    if not user_id:
+        await websocket.close(code=4001, reason="Unauthorized")
+        return
+
+    # Verify the call belongs to this user
+    call_check = supabase.table("calls").select("id").eq("id", call_id).eq("user_id", user_id).single().execute()
+    if not call_check.data:
+        await websocket.close(code=4004, reason="Call not found")
+        return
+
     await websocket.accept()
 
     call_res = supabase.table("calls").select("*").eq("id", call_id).single().execute()

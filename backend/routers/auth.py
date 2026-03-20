@@ -1,13 +1,29 @@
 import os
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response, Cookie
 from pydantic import BaseModel
 import httpx
-from auth_utils import get_user_from_token
+from auth_utils import verify_token
 
 router = APIRouter()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
+IS_PRODUCTION = os.getenv("RAILWAY_ENVIRONMENT", "") == "production" or "vercel" in os.getenv("FRONTEND_URL", "")
+
+COOKIE_NAME = "sw_token"
+COOKIE_MAX_AGE = 60 * 60 * 24 * 7  # 7 days
+
+
+def _set_auth_cookie(response: Response, token: str):
+    response.set_cookie(
+        key=COOKIE_NAME,
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=COOKIE_MAX_AGE,
+        path="/",
+    )
 
 
 class GoogleToken(BaseModel):
@@ -15,13 +31,13 @@ class GoogleToken(BaseModel):
 
 
 @router.post("/google")
-async def google_auth(body: GoogleToken):
+async def google_auth(body: GoogleToken, response: Response):
     """Exchange Google OAuth token for Supabase session via Auth REST API."""
     if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
         raise HTTPException(status_code=500, detail="Supabase not configured")
 
     async with httpx.AsyncClient(timeout=10.0) as client:
-        response = await client.post(
+        resp = await client.post(
             f"{SUPABASE_URL}/auth/v1/token?grant_type=id_token",
             headers={
                 "apikey": SUPABASE_SERVICE_KEY,
@@ -31,14 +47,20 @@ async def google_auth(body: GoogleToken):
             json={"provider": "google", "id_token": body.access_token},
         )
 
-    if response.status_code != 200:
-        err = response.json() if response.text else {}
+    if resp.status_code != 200:
+        err = resp.json() if resp.text else {}
         raise HTTPException(status_code=401, detail=err.get("error_description", err.get("msg", "Login failed")))
 
-    data = response.json()
+    data = resp.json()
     user = data.get("user", {})
+    access_token = data.get("access_token", "")
+
+    # Set httpOnly cookie for browser clients
+    _set_auth_cookie(response, access_token)
+
+    # Also return token in body for Chrome extension (can't read httpOnly cookies)
     return {
-        "access_token": data.get("access_token"),
+        "access_token": access_token,
         "user": {
             "id": user.get("id"),
             "email": user.get("email"),
@@ -47,11 +69,17 @@ async def google_auth(body: GoogleToken):
     }
 
 
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie(key=COOKIE_NAME, path="/")
+    return {"ok": True}
+
+
 @router.get("/me")
-async def get_me(authorization: str = ""):
-    """Validate JWT and return user info."""
-    token = (authorization or "").replace("Bearer ", "")
-    user = await get_user_from_token(token)
-    if not user:
+async def get_me(authorization: str = "", sw_token: str = Cookie("")):
+    """Validate JWT and return user info. Checks cookie first, then Authorization header."""
+    token = sw_token or (authorization or "").replace("Bearer ", "")
+    payload = verify_token(token)
+    if not payload:
         raise HTTPException(status_code=401, detail="Invalid token")
-    return {"id": user.get("id"), "email": user.get("email", "")}
+    return {"id": payload.get("sub"), "email": payload.get("email", "")}

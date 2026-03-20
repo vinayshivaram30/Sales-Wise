@@ -2,8 +2,13 @@ import anthropic
 import json
 import os
 import re
+import logging
+
+log = logging.getLogger(__name__)
 
 client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+MAX_RETRIES = 2
 
 
 def _extract_text(message) -> str:
@@ -19,11 +24,36 @@ def _parse_json_response(text: str) -> dict:
     if not text or not text.strip():
         raise ValueError("Empty response from LLM")
     text = text.strip()
-    # Strip ```json ... ``` or ``` ... ``` code blocks
     match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
     if match:
         text = match.group(1).strip()
     return json.loads(text)
+
+
+async def _call_with_retry(model: str, max_tokens: int, messages: list) -> dict:
+    """Call Claude and parse JSON response, retrying once on parse failure."""
+    last_error = None
+    for attempt in range(MAX_RETRIES):
+        try:
+            message = await client.messages.create(
+                model=model,
+                max_tokens=max_tokens,
+                messages=messages,
+            )
+            return _parse_json_response(_extract_text(message))
+        except json.JSONDecodeError as e:
+            last_error = e
+            log.warning(f"LLM JSON parse failed (attempt {attempt + 1}): {e}")
+            if attempt < MAX_RETRIES - 1:
+                messages = messages.copy()
+                messages.append({"role": "assistant", "content": _extract_text(message)})
+                messages.append({"role": "user", "content": "Your response was not valid JSON. Please respond with ONLY valid JSON, no other text."})
+        except Exception as e:
+            last_error = e
+            log.exception(f"LLM call failed (attempt {attempt + 1})")
+            if attempt >= MAX_RETRIES - 1:
+                break
+    raise ValueError(f"LLM failed after {MAX_RETRIES} attempts: {last_error}")
 
 
 def _build_call_context(call: dict) -> str:
@@ -114,12 +144,11 @@ Generate a call plan using the MEDDIC framework. Return ONLY valid JSON:
   "watch_for": "One sentence on likely objection or risk."
 }}"""
 
-    message = await client.messages.create(
+    return await _call_with_retry(
         model="claude-sonnet-4-5",
         max_tokens=1024,
-        messages=[{"role": "user", "content": prompt}]
+        messages=[{"role": "user", "content": prompt}],
     )
-    return _parse_json_response(_extract_text(message))
 
 
 async def generate_suggestion(
@@ -159,12 +188,11 @@ Rules:
   "confidence": 0.85
 }}"""
 
-    message = await client.messages.create(
+    return await _call_with_retry(
         model="claude-sonnet-4-5",
         max_tokens=256,
-        messages=[{"role": "user", "content": prompt}]
+        messages=[{"role": "user", "content": prompt}],
     )
-    return _parse_json_response(_extract_text(message))
 
 
 async def generate_summary(full_transcript: str, call: dict, call_plan: dict) -> dict:
@@ -204,9 +232,8 @@ Return ONLY valid JSON:
   ]
 }}"""
 
-    message = await client.messages.create(
+    return await _call_with_retry(
         model="claude-sonnet-4-5",
         max_tokens=2048,
-        messages=[{"role": "user", "content": prompt}]
+        messages=[{"role": "user", "content": prompt}],
     )
-    return _parse_json_response(_extract_text(message))
