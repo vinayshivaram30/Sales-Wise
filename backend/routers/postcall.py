@@ -1,20 +1,21 @@
 from fastapi import APIRouter, HTTPException, Header
-from db import supabase
+from db import get_user_client
 from services.llm import generate_summary
 from auth_utils import require_user_id
 
 router = APIRouter()
 
 
-async def get_user_id(authorization: str) -> str:
-    return await require_user_id(authorization)
+def _get_token(authorization: str) -> str:
+    return (authorization or "").replace("Bearer ", "")
 
 
 @router.post("/{call_id}/summarise")
 async def summarise_call(call_id: str, authorization: str = Header("")):
-    await get_user_id(authorization)
+    await require_user_id(authorization)
+    db = get_user_client(_get_token(authorization))
 
-    chunks_res = supabase.table("transcript_chunks").select("*") \
+    chunks_res = db.table("transcript_chunks").select("*") \
         .eq("call_id", call_id).order("seq").execute()
 
     if not chunks_res.data:
@@ -25,8 +26,8 @@ async def summarise_call(call_id: str, authorization: str = Header("")):
         for c in chunks_res.data
     )
 
-    call_res = supabase.table("calls").select("*").eq("id", call_id).single().execute()
-    plan_res = supabase.table("call_plans").select("*").eq("call_id", call_id).single().execute()
+    call_res = db.table("calls").select("*").eq("id", call_id).single().execute()
+    plan_res = db.table("call_plans").select("*").eq("call_id", call_id).single().execute()
 
     summary = await generate_summary(
         full_transcript=full_transcript,
@@ -34,7 +35,7 @@ async def summarise_call(call_id: str, authorization: str = Header("")):
         call_plan=plan_res.data or {}
     )
 
-    supabase.table("call_summaries").upsert({
+    db.table("call_summaries").upsert({
         "call_id": call_id,
         "summary_text": summary["summary_text"],
         "meddic_state": summary["meddic_state"],
@@ -50,8 +51,9 @@ async def summarise_call(call_id: str, authorization: str = Header("")):
 
 @router.get("/{call_id}/summary")
 async def get_summary(call_id: str, authorization: str = Header("")):
-    await get_user_id(authorization)
-    result = supabase.table("call_summaries").select("*").eq("call_id", call_id).single().execute()
+    await require_user_id(authorization)
+    db = get_user_client(_get_token(authorization))
+    result = db.table("call_summaries").select("*").eq("call_id", call_id).single().execute()
     if not result.data:
         raise HTTPException(status_code=404, detail="Summary not found")
     return result.data

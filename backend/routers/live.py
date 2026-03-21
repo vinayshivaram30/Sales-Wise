@@ -4,7 +4,7 @@ from services.stt import transcribe_chunk
 from services.llm import generate_suggestion
 from services.session import get_session, save_session
 from auth_utils import get_user_id_from_token
-from db import supabase
+from db import supabase, get_user_client
 from datetime import datetime, timezone
 import json
 import logging
@@ -33,8 +33,10 @@ async def websocket_call(websocket: WebSocket, call_id: str, token: str = ""):
 
     await websocket.accept()
 
-    call_res = supabase.table("calls").select("*").eq("id", call_id).single().execute()
-    plan_res = supabase.table("call_plans").select("*").eq("call_id", call_id).single().execute()
+    # Use user-scoped client for RLS enforcement (service client for writes during call)
+    db = get_user_client(token) if token else supabase
+    call_res = db.table("calls").select("*").eq("id", call_id).single().execute()
+    plan_res = db.table("call_plans").select("*").eq("call_id", call_id).single().execute()
     call = call_res.data or {}
     call_plan = plan_res.data or {}
 
