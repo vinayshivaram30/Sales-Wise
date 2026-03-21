@@ -2,12 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { generatePlan, getPlan, updateCall, getCallDetail } from '../lib/api';
 import CallProgressBar from '../components/CallProgressBar';
-
-const MEDDIC_LABELS: Record<string, string> = {
-  metrics: 'Metrics', econ_buyer: 'Economic buyer',
-  decision_criteria: 'Decision criteria', decision_process: 'Decision process',
-  pain: 'Pain', champion: 'Champion'
-};
+import { MEDDIC_LABELS } from '../lib/constants';
 
 const DARK = {
   bg: '#0f0f0f',
