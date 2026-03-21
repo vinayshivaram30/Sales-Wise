@@ -20,7 +20,11 @@ async def analytics_summary(authorization: str = Header("")):
     db = get_user_client(_get_token(authorization))
 
     # Fetch all calls for this user (RLS enforced)
-    calls_res = db.table("calls").select("id,status,framework,created_at").order("created_at", desc=True).execute()
+    # 'framework' column added in migration 006 — may not exist on all deployments
+    try:
+        calls_res = db.table("calls").select("id,status,framework,created_at").order("created_at", desc=True).execute()
+    except Exception:
+        calls_res = db.table("calls").select("id,status,created_at").order("created_at", desc=True).execute()
     calls = calls_res.data or []
     total_calls = len(calls)
 
@@ -28,8 +32,8 @@ async def analytics_summary(authorization: str = Header("")):
     week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
     calls_this_week = sum(1 for c in calls if c.get("created_at", "") >= week_ago)
 
-    # Framework breakdown
-    fw_counter = Counter(c.get("framework", "MEDDIC") for c in calls)
+    # Framework breakdown (defaults to MEDDIC if column missing)
+    fw_counter = Counter(c.get("framework") or "MEDDIC" for c in calls)
 
     # Fetch summaries for completed calls
     call_ids = [c["id"] for c in calls if c.get("status") == "ended"]
