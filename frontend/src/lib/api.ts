@@ -63,3 +63,7 @@ export async function summariseCall(callId: string) {
 export async function getSummary(callId: string) {
   return request(`${BASE}/postcall/${callId}/summary`);
 }
+
+export async function getAnalyticsSummary() {
+  return request(`${BASE}/analytics/summary`);
+}

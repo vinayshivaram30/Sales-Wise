@@ -102,6 +102,25 @@ export default function Layout() {
                   </>
                 )}
               </NavLink>
+              <NavLink
+                to="/analytics"
+                className={({ isActive }) =>
+                  `relative px-4 py-5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "text-indigo-400"
+                      : "text-gray-400 hover:text-gray-200"
+                  }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    Analytics
+                    {isActive && (
+                      <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-indigo-500 rounded-full" />
+                    )}
+                  </>
+                )}
+              </NavLink>
             </div>
 
             {/* User Avatar Dropdown */}

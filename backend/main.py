@@ -5,7 +5,7 @@ load_dotenv()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import auth, calls, live, postcall
+from routers import auth, calls, live, postcall, analytics
 
 app = FastAPI(title="Sales-Wise - Sales Copilot API")
 
@@ -27,6 +27,7 @@ app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(calls.router, prefix="/calls", tags=["calls"])
 app.include_router(live.router, prefix="/ws", tags=["live"])
 app.include_router(postcall.router, prefix="/postcall", tags=["postcall"])
+app.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
 
 
 @app.get("/health")
