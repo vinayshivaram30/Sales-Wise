@@ -1,6 +1,6 @@
 import os
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from services.stt import transcribe_chunk
+from services.stt import transcribe_chunk, estimate_speaker
 from services.llm import generate_suggestion
 from services.session import get_session, save_session
 from services.rag import get_rag_context
@@ -69,7 +69,7 @@ async def websocket_call(websocket: WebSocket, call_id: str, token: str = ""):
         supabase.table("transcript_chunks").insert({
             "call_id": call_id,
             "seq": seq,
-            "speaker": "unknown",
+            "speaker": estimate_speaker(transcript_text),
             "text": transcript_text
         }).execute()
 
