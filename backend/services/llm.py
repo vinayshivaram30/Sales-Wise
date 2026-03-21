@@ -1,9 +1,12 @@
 import anthropic
+import asyncio
 import json
+import logging
 import os
 import re
 
 client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+log = logging.getLogger(__name__)
 
 
 def _extract_text(message) -> str:
@@ -12,6 +15,15 @@ def _extract_text(message) -> str:
         return ""
     block = message.content[0]
     return getattr(block, "text", "") or ""
+
+
+def _validate_fields(data: dict, required_fields: list[str], context: str) -> dict:
+    """Validate that required fields exist in parsed response."""
+    missing = [f for f in required_fields if f not in data]
+    if missing:
+        log.warning("LLM response missing fields", extra={"context": context, "missing": missing})
+        raise ValueError(f"LLM response missing required fields: {missing}")
+    return data
 
 
 def _parse_json_response(text: str) -> dict:
@@ -119,7 +131,8 @@ Generate a call plan using the MEDDIC framework. Return ONLY valid JSON:
         max_tokens=1024,
         messages=[{"role": "user", "content": prompt}]
     )
-    return _parse_json_response(_extract_text(message))
+    result = _parse_json_response(_extract_text(message))
+    return _validate_fields(result, ["questions", "meddic_gaps"], "generate_call_plan")
 
 
 async def generate_suggestion(
@@ -159,12 +172,33 @@ Rules:
   "confidence": 0.85
 }}"""
 
-    message = await client.messages.create(
-        model="claude-sonnet-4-5",
-        max_tokens=256,
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return _parse_json_response(_extract_text(message))
+    # Retry with exponential backoff on rate limit
+    for attempt in range(3):
+        try:
+            message = await client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=256,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            result = _parse_json_response(_extract_text(message))
+            return _validate_fields(result, ["question", "meddic_field", "why"], "generate_suggestion")
+        except anthropic.RateLimitError:
+            if attempt < 2:
+                delay = (attempt + 1) * 1.0  # 1s, 2s
+                log.warning("Claude rate limited, retrying", extra={"attempt": attempt + 1, "delay": delay})
+                await asyncio.sleep(delay)
+            else:
+                log.error("Claude rate limited after 3 attempts")
+                return {
+                    "status": "rate_limited",
+                    "question": "",
+                    "meddic_field": "",
+                    "why": "Suggestion temporarily unavailable",
+                    "confidence": 0,
+                }
+
+    # Should not reach here, but return graceful fallback
+    return {"status": "rate_limited", "question": "", "meddic_field": "", "why": "Suggestion temporarily unavailable", "confidence": 0}
 
 
 async def generate_summary(full_transcript: str, call: dict, call_plan: dict) -> dict:
@@ -209,4 +243,5 @@ Return ONLY valid JSON:
         max_tokens=2048,
         messages=[{"role": "user", "content": prompt}]
     )
-    return _parse_json_response(_extract_text(message))
+    result = _parse_json_response(_extract_text(message))
+    return _validate_fields(result, ["summary_text", "meddic_state", "deal_stage", "deal_score"], "generate_summary")

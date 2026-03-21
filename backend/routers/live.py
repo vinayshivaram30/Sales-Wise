@@ -1,8 +1,10 @@
+import os
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from services.stt import transcribe_chunk
 from services.llm import generate_suggestion
 from services.session import get_session, save_session
-from db import supabase
+from auth_utils import get_user_id_from_token
+from db import supabase, get_user_client
 from datetime import datetime, timezone
 import json
 import logging
@@ -15,13 +17,26 @@ SAMPLE_RATE = 16000
 BYTES_PER_SAMPLE = 2
 CHUNK_BYTES = CHUNK_DURATION_S * SAMPLE_RATE * BYTES_PER_SAMPLE
 
+WS_AUTH_GRACE = os.getenv("WS_AUTH_GRACE", "").lower() == "true"
+
 
 @router.websocket("/call/{call_id}")
-async def websocket_call(websocket: WebSocket, call_id: str):
+async def websocket_call(websocket: WebSocket, call_id: str, token: str = ""):
+    # Authenticate via query param JWT
+    user_id = await get_user_id_from_token(token) if token else None
+    if not user_id:
+        if WS_AUTH_GRACE:
+            log.warning("WS connection without auth (grace period active)", extra={"call_id": call_id})
+        else:
+            await websocket.close(code=4003, reason="Authentication required")
+            return
+
     await websocket.accept()
 
-    call_res = supabase.table("calls").select("*").eq("id", call_id).single().execute()
-    plan_res = supabase.table("call_plans").select("*").eq("call_id", call_id).single().execute()
+    # Use user-scoped client for RLS enforcement (service client for writes during call)
+    db = get_user_client(token) if token else supabase
+    call_res = db.table("calls").select("*").eq("id", call_id).single().execute()
+    plan_res = db.table("call_plans").select("*").eq("call_id", call_id).single().execute()
     call = call_res.data or {}
     call_plan = plan_res.data or {}
 

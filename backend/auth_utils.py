@@ -1,12 +1,14 @@
 """Auth utilities using Supabase REST API (avoids Python client set_auth bug)."""
+from __future__ import annotations
 import os
+from typing import Optional
 import httpx
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
 
 
-async def get_user_from_token(token: str) -> dict | None:
+async def get_user_from_token(token: str) -> Optional[dict]:
     """Verify JWT and return user dict via Supabase Auth REST API."""
     if not token or not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
         return None
@@ -26,7 +28,17 @@ async def get_user_from_token(token: str) -> dict | None:
     return response.json()
 
 
-async def get_user_id_from_token(token: str) -> str | None:
+async def get_user_id_from_token(token: str) -> Optional[str]:
     """Verify JWT and return user ID."""
     user = await get_user_from_token(token)
     return user.get("id") if user else None
+
+
+async def require_user_id(authorization: str) -> str:
+    """Extract and validate user ID from Authorization header. Raises 401 if invalid."""
+    from fastapi import HTTPException
+    token = (authorization or "").replace("Bearer ", "")
+    user_id = await get_user_id_from_token(token)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return str(user_id)

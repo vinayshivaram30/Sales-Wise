@@ -3,12 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, CheckCircle, AlertCircle, Target } from 'lucide-react';
 import { summariseCall, getSummary, getCallDetail } from '../lib/api';
 import CallProgressBar from '../components/CallProgressBar';
-
-const MEDDIC_LABELS: Record<string, string> = {
-  metrics: 'Metrics', econ_buyer: 'Economic Buyer',
-  decision_criteria: 'Decision Criteria', decision_process: 'Decision Process',
-  pain: 'Pain', champion: 'Champion'
-};
+import { MEDDIC_LABELS } from '../lib/constants';
 
 export default function PostCall() {
   const { callId } = useParams<{ callId: string }>();

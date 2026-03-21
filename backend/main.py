@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import auth, calls, live, postcall
 
-app = FastAPI(title="CloseIt - Sales Copilot API")
+app = FastAPI(title="Sales-Wise - Sales Copilot API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,5 +30,29 @@ app.include_router(postcall.router, prefix="/postcall", tags=["postcall"])
 
 
 @app.get("/health")
-def health():
-    return {"status": "ok"}
+async def health():
+    """Health check that verifies connectivity to Supabase and Redis."""
+    checks = {"api": "ok"}
+
+    # Check Supabase
+    try:
+        from db import supabase
+        supabase.table("profiles").select("id").limit(1).execute()
+        checks["supabase"] = "ok"
+    except Exception:
+        checks["supabase"] = "error"
+
+    # Check Redis (optional)
+    try:
+        from services.session import get_redis
+        r = await get_redis()
+        if r:
+            await r.ping()
+            checks["redis"] = "ok"
+        else:
+            checks["redis"] = "unavailable"
+    except Exception:
+        checks["redis"] = "error"
+
+    status = "ok" if checks.get("supabase") == "ok" else "degraded"
+    return {"status": status, "checks": checks}

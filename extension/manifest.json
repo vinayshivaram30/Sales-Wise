@@ -19,8 +19,7 @@
   "externally_connectable": {
     "matches": [
       "http://localhost:*/*",
-      "https://*.vercel.app/*",
-      "https://*.railway.app/*"
+      "https://sales-wise.vercel.app/*"
     ]
   },
   "background": {
