@@ -1,4 +1,4 @@
--- CloseIt / Sales Copilot - Supabase schema
+-- Sales-Wise / Sales Copilot - Supabase schema
 -- Run this in the Supabase SQL editor before starting
 
 -- Enable vector extension for RAG
