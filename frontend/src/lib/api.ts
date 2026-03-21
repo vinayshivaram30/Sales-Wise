@@ -67,3 +67,15 @@ export async function getSummary(callId: string) {
 export async function getAnalyticsSummary() {
   return request(`${BASE}/analytics/summary`);
 }
+
+export async function getCrmStatus() {
+  return request(`${BASE}/crm/status`);
+}
+
+export async function disconnectCrm() {
+  return request(`${BASE}/crm/salesforce/disconnect`, { method: 'DELETE' });
+}
+
+export function getCrmAuthorizeUrl() {
+  return `${BASE}/crm/salesforce/authorize`;
+}
