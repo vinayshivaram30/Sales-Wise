@@ -1,17 +1,13 @@
 from fastapi import APIRouter, HTTPException, Header
 from db import supabase
 from services.llm import generate_summary
-from auth_utils import get_user_id_from_token
+from auth_utils import require_user_id
 
 router = APIRouter()
 
 
 async def get_user_id(authorization: str) -> str:
-    token = (authorization or "").replace("Bearer ", "")
-    user_id = await get_user_id_from_token(token)
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    return str(user_id)
+    return await require_user_id(authorization)
 
 
 @router.post("/{call_id}/summarise")

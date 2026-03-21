@@ -2,17 +2,13 @@ from fastapi import APIRouter, HTTPException, Header
 from models import CallCreate, CallUpdate
 from db import supabase
 from services.llm import generate_call_plan
-from auth_utils import get_user_id_from_token
+from auth_utils import require_user_id
 
 router = APIRouter()
 
 
 async def get_user_id(authorization: str) -> str:
-    token = (authorization or "").replace("Bearer ", "")
-    user_id = await get_user_id_from_token(token)
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    return str(user_id)
+    return await require_user_id(authorization)
 
 
 @router.post("")
@@ -107,8 +103,7 @@ async def delete_call(call_id: str, authorization: str = Header("")):
     call_res = supabase.table("calls").select("id").eq("id", call_id).eq("user_id", user_id).single().execute()
     if not call_res.data:
         raise HTTPException(status_code=404, detail="Call not found")
-    for table in ("call_summaries", "suggestions", "transcript_chunks", "call_plans", "past_conversations"):
-        supabase.table(table).delete().eq("call_id", call_id).execute()
+    # CASCADE constraints handle cleanup of child tables automatically
     supabase.table("calls").delete().eq("id", call_id).execute()
     return {"ok": True}
 

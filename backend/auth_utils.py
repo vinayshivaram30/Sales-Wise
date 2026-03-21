@@ -30,3 +30,13 @@ async def get_user_id_from_token(token: str) -> str | None:
     """Verify JWT and return user ID."""
     user = await get_user_from_token(token)
     return user.get("id") if user else None
+
+
+async def require_user_id(authorization: str) -> str:
+    """Extract and validate user ID from Authorization header. Raises 401 if invalid."""
+    from fastapi import HTTPException
+    token = (authorization or "").replace("Bearer ", "")
+    user_id = await get_user_id_from_token(token)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return str(user_id)

@@ -1,7 +1,9 @@
+import os
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from services.stt import transcribe_chunk
 from services.llm import generate_suggestion
 from services.session import get_session, save_session
+from auth_utils import get_user_id_from_token
 from db import supabase
 from datetime import datetime, timezone
 import json
@@ -15,9 +17,20 @@ SAMPLE_RATE = 16000
 BYTES_PER_SAMPLE = 2
 CHUNK_BYTES = CHUNK_DURATION_S * SAMPLE_RATE * BYTES_PER_SAMPLE
 
+WS_AUTH_GRACE = os.getenv("WS_AUTH_GRACE", "").lower() == "true"
+
 
 @router.websocket("/call/{call_id}")
-async def websocket_call(websocket: WebSocket, call_id: str):
+async def websocket_call(websocket: WebSocket, call_id: str, token: str = ""):
+    # Authenticate via query param JWT
+    user_id = await get_user_id_from_token(token) if token else None
+    if not user_id:
+        if WS_AUTH_GRACE:
+            log.warning("WS connection without auth (grace period active)", extra={"call_id": call_id})
+        else:
+            await websocket.close(code=4003, reason="Authentication required")
+            return
+
     await websocket.accept()
 
     call_res = supabase.table("calls").select("*").eq("id", call_id).single().execute()
