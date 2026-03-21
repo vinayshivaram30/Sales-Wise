@@ -3,6 +3,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from services.stt import transcribe_chunk
 from services.llm import generate_suggestion
 from services.session import get_session, save_session
+from services.rag import get_rag_context
 from auth_utils import get_user_id_from_token
 from db import supabase, get_user_client
 from datetime import datetime, timezone
@@ -78,12 +79,21 @@ async def websocket_call(websocket: WebSocket, call_id: str, token: str = ""):
 
         transcript_window = " ".join(session["chunk_buffer"])
 
+        # Fetch RAG context in parallel (non-blocking, 2s timeout)
+        rag_context = ""
+        if user_id:
+            try:
+                rag_context = await get_rag_context(user_id, transcript_window, call_id)
+            except Exception:
+                log.warning("RAG context retrieval failed, continuing without it")
+
         try:
             suggestion = await generate_suggestion(
                 transcript_window=transcript_window,
                 meddic_state=session["meddic_state"],
                 asked_questions=session["asked_questions"],
-                call_plan=call_plan
+                call_plan=call_plan,
+                rag_context=rag_context
             )
         except Exception as e:
             await websocket.send_json({"type": "error", "message": f"LLM failed: {e}"})
