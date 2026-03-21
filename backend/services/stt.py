@@ -1,8 +1,10 @@
 import httpx
+import logging
 import os
 import io
 import struct
 
+log = logging.getLogger(__name__)
 SARVAM_URL = "https://api.sarvam.ai/speech-to-text"
 SAMPLE_RATE = 16000
 CHANNELS = 1
@@ -46,6 +48,10 @@ async def transcribe_chunk(audio_bytes: bytes) -> str:
             files={"file": ("audio.wav", io.BytesIO(wav_data), "audio/wav")},
             data={"model": "saaras:v3", "mode": "transcribe"},
         )
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            log.error("Sarvam STT request failed", extra={"status": e.response.status_code})
+            return ""
         data = response.json()
         return data.get("transcript", "")
