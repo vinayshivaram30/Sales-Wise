@@ -1,7 +1,11 @@
+import logging
 from fastapi import APIRouter, HTTPException, Header
 from db import get_user_client
 from services.llm import generate_summary
+from services.rag import store_embedding
 from auth_utils import require_user_id
+
+log = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -12,7 +16,7 @@ def _get_token(authorization: str) -> str:
 
 @router.post("/{call_id}/summarise")
 async def summarise_call(call_id: str, authorization: str = Header("")):
-    await require_user_id(authorization)
+    user_id = await require_user_id(authorization)
     db = get_user_client(_get_token(authorization))
 
     chunks_res = db.table("transcript_chunks").select("*") \
@@ -45,6 +49,12 @@ async def summarise_call(call_id: str, authorization: str = Header("")):
         "deal_score": summary["deal_score"],
         "coaching": summary.get("coaching", [])
     }, on_conflict="call_id").execute()
+
+    # Store embedding for RAG (async, non-blocking — failure doesn't affect response)
+    try:
+        await store_embedding(user_id, call_id, summary["summary_text"])
+    except Exception:
+        log.warning("Failed to store RAG embedding", extra={"call_id": call_id})
 
     return summary
 

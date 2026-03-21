@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Calls from './pages/Calls';
 import PreCall from './pages/PreCall';
 import PostCall from './pages/PostCall';
+import Analytics from './pages/Analytics';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -20,6 +21,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="/calls" element={<Calls />} />
           <Route path="/calls/:callId/precall" element={<PreCall />} />
           <Route path="/calls/:callId/postcall" element={<PostCall />} />
+          <Route path="/analytics" element={<Analytics />} />
         </Route>
       </Routes>
     </BrowserRouter>

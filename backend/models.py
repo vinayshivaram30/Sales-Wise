@@ -8,6 +8,7 @@ class CallCreate(BaseModel):
     contact_name: Optional[str] = Field(default=None)
     company_name: Optional[str] = Field(default=None)
     goal: Optional[str] = Field(default="Discovery")
+    framework: Optional[str] = Field(default="MEDDIC")  # MEDDIC | SPIN | BANT
     product_ctx: Optional[str] = None
     company_ctx: Optional[str] = None
     past_context: Optional[str] = None
@@ -17,6 +18,7 @@ class CallUpdate(BaseModel):
     contact_name: Optional[str] = None
     company_name: Optional[str] = None
     goal: Optional[str] = None
+    framework: Optional[str] = None  # MEDDIC | SPIN | BANT
     product_ctx: Optional[str] = None
     company_ctx: Optional[str] = None
     past_context: Optional[str] = None

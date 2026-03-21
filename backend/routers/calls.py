@@ -21,6 +21,7 @@ async def create_call(body: CallCreate, authorization: str = Header("")):
         "contact_name": body.contact_name or "",
         "company_name": body.company_name or "",
         "goal": body.goal or "Discovery",
+        "framework": body.framework or "MEDDIC",
         "product_ctx": body.product_ctx,
         "company_ctx": body.company_ctx,
         "past_context": body.past_context,
