@@ -1,80 +1,141 @@
-"""Tests for auth_utils — local JWT verification."""
+"""Tests for auth_utils — Supabase REST API auth verification."""
 import os
-from unittest.mock import patch
+import sys
+from unittest.mock import patch, AsyncMock, MagicMock
 
-from jose import jwt
+import pytest
 
-# Must set env before importing auth_utils
-TEST_SECRET = "test-jwt-secret-for-unit-tests"
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
 TEST_USER_ID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 
 
-def _make_token(sub=TEST_USER_ID, email="test@example.com", secret=TEST_SECRET):
-    return jwt.encode({"sub": sub, "email": email}, secret, algorithm="HS256")
+@pytest.mark.asyncio
+class TestGetUserFromToken:
+    async def test_valid_token_returns_user(self):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"id": TEST_USER_ID, "email": "test@example.com"}
 
+        with patch("auth_utils.httpx.AsyncClient") as MockClient:
+            instance = AsyncMock()
+            instance.get.return_value = mock_response
+            instance.__aenter__ = AsyncMock(return_value=instance)
+            instance.__aexit__ = AsyncMock(return_value=False)
+            MockClient.return_value = instance
 
-class TestVerifyToken:
-    def test_valid_token(self):
-        with patch.dict(os.environ, {"SUPABASE_JWT_SECRET": TEST_SECRET}):
             import importlib
             import auth_utils
             importlib.reload(auth_utils)
 
-            payload = auth_utils.verify_token(_make_token())
-            assert payload is not None
-            assert payload["sub"] == TEST_USER_ID
-            assert payload["email"] == "test@example.com"
+            result = await auth_utils.get_user_from_token("valid-token")
+            assert result is not None
+            assert result["id"] == TEST_USER_ID
 
-    def test_empty_token_returns_none(self):
-        with patch.dict(os.environ, {"SUPABASE_JWT_SECRET": TEST_SECRET}):
+    async def test_empty_token_returns_none(self):
+        import importlib
+        import auth_utils
+        importlib.reload(auth_utils)
+
+        result = await auth_utils.get_user_from_token("")
+        assert result is None
+
+    async def test_invalid_token_returns_none(self):
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+
+        with patch("auth_utils.httpx.AsyncClient") as MockClient:
+            instance = AsyncMock()
+            instance.get.return_value = mock_response
+            instance.__aenter__ = AsyncMock(return_value=instance)
+            instance.__aexit__ = AsyncMock(return_value=False)
+            MockClient.return_value = instance
+
             import importlib
             import auth_utils
             importlib.reload(auth_utils)
 
-            assert auth_utils.verify_token("") is None
-            assert auth_utils.verify_token(None) is None
-
-    def test_bad_signature_returns_none(self):
-        with patch.dict(os.environ, {"SUPABASE_JWT_SECRET": TEST_SECRET}):
-            import importlib
-            import auth_utils
-            importlib.reload(auth_utils)
-
-            bad_token = _make_token(secret="wrong-secret")
-            assert auth_utils.verify_token(bad_token) is None
-
-    def test_malformed_token_returns_none(self):
-        with patch.dict(os.environ, {"SUPABASE_JWT_SECRET": TEST_SECRET}):
-            import importlib
-            import auth_utils
-            importlib.reload(auth_utils)
-
-            assert auth_utils.verify_token("not.a.jwt") is None
-            assert auth_utils.verify_token("garbage") is None
-
-    def test_no_secret_configured_returns_none(self):
-        with patch.dict(os.environ, {"SUPABASE_JWT_SECRET": "", "JWT_SECRET": ""}):
-            import importlib
-            import auth_utils
-            importlib.reload(auth_utils)
-
-            assert auth_utils.verify_token(_make_token()) is None
+            result = await auth_utils.get_user_from_token("bad-token")
+            assert result is None
 
 
+@pytest.mark.asyncio
 class TestGetUserIdFromToken:
-    def test_returns_sub(self):
-        with patch.dict(os.environ, {"SUPABASE_JWT_SECRET": TEST_SECRET}):
+    async def test_returns_user_id(self):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"id": TEST_USER_ID, "email": "test@example.com"}
+
+        with patch("auth_utils.httpx.AsyncClient") as MockClient:
+            instance = AsyncMock()
+            instance.get.return_value = mock_response
+            instance.__aenter__ = AsyncMock(return_value=instance)
+            instance.__aexit__ = AsyncMock(return_value=False)
+            MockClient.return_value = instance
+
             import importlib
             import auth_utils
             importlib.reload(auth_utils)
 
-            uid = auth_utils.get_user_id_from_token(_make_token())
+            uid = await auth_utils.get_user_id_from_token("valid-token")
             assert uid == TEST_USER_ID
 
-    def test_invalid_token_returns_none(self):
-        with patch.dict(os.environ, {"SUPABASE_JWT_SECRET": TEST_SECRET}):
+    async def test_invalid_token_returns_none(self):
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+
+        with patch("auth_utils.httpx.AsyncClient") as MockClient:
+            instance = AsyncMock()
+            instance.get.return_value = mock_response
+            instance.__aenter__ = AsyncMock(return_value=instance)
+            instance.__aexit__ = AsyncMock(return_value=False)
+            MockClient.return_value = instance
+
             import importlib
             import auth_utils
             importlib.reload(auth_utils)
 
-            assert auth_utils.get_user_id_from_token("bad") is None
+            uid = await auth_utils.get_user_id_from_token("bad-token")
+            assert uid is None
+
+
+@pytest.mark.asyncio
+class TestRequireUserId:
+    async def test_valid_auth_returns_user_id(self):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"id": TEST_USER_ID, "email": "test@example.com"}
+
+        with patch("auth_utils.httpx.AsyncClient") as MockClient:
+            instance = AsyncMock()
+            instance.get.return_value = mock_response
+            instance.__aenter__ = AsyncMock(return_value=instance)
+            instance.__aexit__ = AsyncMock(return_value=False)
+            MockClient.return_value = instance
+
+            import importlib
+            import auth_utils
+            importlib.reload(auth_utils)
+
+            uid = await auth_utils.require_user_id(f"Bearer valid-token")
+            assert uid == TEST_USER_ID
+
+    async def test_invalid_auth_raises_401(self):
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+
+        with patch("auth_utils.httpx.AsyncClient") as MockClient:
+            instance = AsyncMock()
+            instance.get.return_value = mock_response
+            instance.__aenter__ = AsyncMock(return_value=instance)
+            instance.__aexit__ = AsyncMock(return_value=False)
+            MockClient.return_value = instance
+
+            import importlib
+            import auth_utils
+            importlib.reload(auth_utils)
+
+            from fastapi import HTTPException
+            with pytest.raises(HTTPException) as exc_info:
+                await auth_utils.require_user_id("Bearer bad-token")
+            assert exc_info.value.status_code == 401
