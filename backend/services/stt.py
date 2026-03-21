@@ -8,16 +8,6 @@ SAMPLE_RATE = 16000
 CHANNELS = 1
 BITS_PER_SAMPLE = 16
 
-# Reuse a single HTTP client across calls (connection pooling)
-_client: httpx.AsyncClient | None = None
-
-
-def _get_client() -> httpx.AsyncClient:
-    global _client
-    if _client is None or _client.is_closed:
-        _client = httpx.AsyncClient(timeout=15.0)
-    return _client
-
 
 def _pcm_to_wav(pcm_bytes: bytes) -> bytes:
     """Wrap raw PCM (16-bit mono) in WAV header."""
@@ -48,14 +38,14 @@ async def transcribe_chunk(audio_bytes: bytes) -> str:
         return ""
 
     wav_data = _pcm_to_wav(audio_bytes)
-    client = _get_client()
 
-    response = await client.post(
-        SARVAM_URL,
-        headers={"api-subscription-key": api_key},
-        files={"file": ("audio.wav", io.BytesIO(wav_data), "audio/wav")},
-        data={"model": "saaras:v3", "mode": "transcribe"},
-    )
-    response.raise_for_status()
-    data = response.json()
-    return data.get("transcript", "")
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        response = await client.post(
+            SARVAM_URL,
+            headers={"api-subscription-key": api_key},
+            files={"file": ("audio.wav", io.BytesIO(wav_data), "audio/wav")},
+            data={"model": "saaras:v3", "mode": "transcribe"},
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data.get("transcript", "")

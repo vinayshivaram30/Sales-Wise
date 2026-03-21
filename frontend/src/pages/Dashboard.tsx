@@ -35,7 +35,7 @@ export default function Dashboard() {
     setError('');
     try {
       const data = await listCalls();
-      setCalls(data.calls || data);
+      setCalls(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load calls');
     } finally {

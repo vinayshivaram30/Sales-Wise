@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header, Cookie
+from fastapi import APIRouter, HTTPException, Header
 from models import CallCreate, CallUpdate
 from db import supabase
 from services.llm import generate_call_plan
@@ -7,17 +7,17 @@ from auth_utils import get_user_id_from_token
 router = APIRouter()
 
 
-def _extract_user_id(authorization: str = "", sw_token: str = "") -> str:
-    token = sw_token or (authorization or "").replace("Bearer ", "")
-    user_id = get_user_id_from_token(token)
+async def get_user_id(authorization: str) -> str:
+    token = (authorization or "").replace("Bearer ", "")
+    user_id = await get_user_id_from_token(token)
     if not user_id:
         raise HTTPException(status_code=401, detail="Unauthorized")
     return str(user_id)
 
 
 @router.post("")
-async def create_call(body: CallCreate, authorization: str = Header(""), sw_token: str = Cookie("")):
-    user_id = _extract_user_id(authorization, sw_token)
+async def create_call(body: CallCreate, authorization: str = Header("")):
+    user_id = await get_user_id(authorization)
     result = supabase.table("calls").insert({
         "user_id": user_id,
         "name": body.name,
@@ -33,8 +33,8 @@ async def create_call(body: CallCreate, authorization: str = Header(""), sw_toke
 
 
 @router.patch("/{call_id}")
-async def update_call(call_id: str, body: CallUpdate, authorization: str = Header(""), sw_token: str = Cookie("")):
-    user_id = _extract_user_id(authorization, sw_token)
+async def update_call(call_id: str, body: CallUpdate, authorization: str = Header("")):
+    user_id = await get_user_id(authorization)
     call_res = supabase.table("calls").select("id").eq("id", call_id).eq("user_id", user_id).single().execute()
     if not call_res.data:
         raise HTTPException(status_code=404, detail="Call not found")
@@ -53,8 +53,8 @@ async def update_call(call_id: str, body: CallUpdate, authorization: str = Heade
 
 
 @router.post("/{call_id}/plan")
-async def create_call_plan(call_id: str, authorization: str = Header(""), sw_token: str = Cookie("")):
-    user_id = _extract_user_id(authorization, sw_token)
+async def create_call_plan(call_id: str, authorization: str = Header("")):
+    user_id = await get_user_id(authorization)
 
     call_res = supabase.table("calls").select("*").eq("id", call_id).eq("user_id", user_id).single().execute()
     if not call_res.data:
@@ -77,8 +77,8 @@ async def create_call_plan(call_id: str, authorization: str = Header(""), sw_tok
 
 
 @router.get("/{call_id}/plan")
-async def get_call_plan(call_id: str, authorization: str = Header(""), sw_token: str = Cookie("")):
-    _extract_user_id(authorization, sw_token)
+async def get_call_plan(call_id: str, authorization: str = Header("")):
+    await get_user_id(authorization)
     result = supabase.table("call_plans").select("*").eq("call_id", call_id).single().execute()
     if not result.data:
         raise HTTPException(status_code=404, detail="Plan not found")
@@ -86,8 +86,8 @@ async def get_call_plan(call_id: str, authorization: str = Header(""), sw_token:
 
 
 @router.get("/{call_id}/detail")
-async def get_call_detail(call_id: str, authorization: str = Header(""), sw_token: str = Cookie("")):
-    _extract_user_id(authorization, sw_token)
+async def get_call_detail(call_id: str, authorization: str = Header("")):
+    await get_user_id(authorization)
     call_res = supabase.table("calls").select("*").eq("id", call_id).single().execute()
     if not call_res.data:
         raise HTTPException(status_code=404, detail="Call not found")
@@ -102,34 +102,32 @@ async def get_call_detail(call_id: str, authorization: str = Header(""), sw_toke
 
 
 @router.delete("/{call_id}")
-async def delete_call(call_id: str, authorization: str = Header(""), sw_token: str = Cookie("")):
-    user_id = _extract_user_id(authorization, sw_token)
+async def delete_call(call_id: str, authorization: str = Header("")):
+    user_id = await get_user_id(authorization)
     call_res = supabase.table("calls").select("id").eq("id", call_id).eq("user_id", user_id).single().execute()
     if not call_res.data:
         raise HTTPException(status_code=404, detail="Call not found")
+    for table in ("call_summaries", "suggestions", "transcript_chunks", "call_plans", "past_conversations"):
+        supabase.table(table).delete().eq("call_id", call_id).execute()
     supabase.table("calls").delete().eq("id", call_id).execute()
     return {"ok": True}
 
 
 @router.get("")
-async def list_calls(authorization: str = Header(""), sw_token: str = Cookie(""), with_plan_only: bool = False, cursor: str = "", limit: int = 20):
-    user_id = _extract_user_id(authorization, sw_token)
-    query = supabase.table("calls").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(limit)
-    if cursor:
-        query = query.lt("created_at", cursor)
-    result = query.execute()
+async def list_calls(authorization: str = Header(""), with_plan_only: bool = False):
+    user_id = await get_user_id(authorization)
+    result = supabase.table("calls").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(50).execute()
     calls = result.data or []
     if with_plan_only:
         call_ids = [c["id"] for c in calls]
         plan_res = supabase.table("call_plans").select("call_id").in_("call_id", call_ids).execute()
         plan_call_ids = {p["call_id"] for p in (plan_res.data or [])}
         calls = [c for c in calls if c["id"] in plan_call_ids]
-    next_cursor = calls[-1]["created_at"] if calls else None
-    return {"calls": calls, "next_cursor": next_cursor}
+    return calls
 
 
 @router.post("/{call_id}/suggestions/{suggestion_id}/action")
-async def update_suggestion(call_id: str, suggestion_id: str, body: dict, authorization: str = Header(""), sw_token: str = Cookie("")):
-    _extract_user_id(authorization, sw_token)
+async def update_suggestion(call_id: str, suggestion_id: str, body: dict, authorization: str = Header("")):
+    await get_user_id(authorization)
     supabase.table("suggestions").update({"status": body["status"]}).eq("id", suggestion_id).execute()
     return {"ok": True}

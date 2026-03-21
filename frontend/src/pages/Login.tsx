@@ -4,7 +4,6 @@ import { GoogleLogin } from "@react-oauth/google";
 export default function Login() {
   const [loginError, setLoginError] = useState('');
   const [loginStatus, setLoginStatus] = useState('');
-
   async function handleSuccess(cred: { credential?: string }) {
     try {
       setLoginStatus("Signing in...");
@@ -87,11 +86,10 @@ export default function Login() {
           <div className="flex justify-center">
             <GoogleLogin
               onSuccess={handleSuccess}
-              onError={() => setLoginError("Google sign-in failed. Check pop-up blocker or try again.")}
+              onError={() => setLoginError("Login failed. Please try again.")}
               theme="filled_black"
               shape="pill"
               size="large"
-              ux_mode="popup"
             />
           </div>
           {loginStatus && <p className="mt-3 text-center text-sm text-indigo-400">{loginStatus}</p>}

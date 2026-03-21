@@ -1,29 +1,13 @@
 import os
-from fastapi import APIRouter, HTTPException, Response, Cookie
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import httpx
-from auth_utils import verify_token
+from auth_utils import get_user_from_token
 
 router = APIRouter()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
-IS_PRODUCTION = os.getenv("RAILWAY_ENVIRONMENT", "") == "production" or "vercel" in os.getenv("FRONTEND_URL", "")
-
-COOKIE_NAME = "sw_token"
-COOKIE_MAX_AGE = 60 * 60 * 24 * 7  # 7 days
-
-
-def _set_auth_cookie(response: Response, token: str):
-    response.set_cookie(
-        key=COOKIE_NAME,
-        value=token,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        max_age=COOKIE_MAX_AGE,
-        path="/",
-    )
 
 
 class GoogleToken(BaseModel):
@@ -31,7 +15,7 @@ class GoogleToken(BaseModel):
 
 
 @router.post("/google")
-async def google_auth(body: GoogleToken, response: Response):
+async def google_auth(body: GoogleToken):
     """Exchange Google OAuth token for Supabase session via Auth REST API."""
     print(f"DEBUG: Starting Google auth exchange for token (len: {len(body.id_token)})")
     if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
@@ -64,14 +48,8 @@ async def google_auth(body: GoogleToken, response: Response):
 
     data = resp.json()
     user = data.get("user", {})
-    access_token = data.get("access_token", "")
-
-    # Set httpOnly cookie for browser clients
-    _set_auth_cookie(response, access_token)
-
-    # Also return token in body for Chrome extension (can't read httpOnly cookies)
     return {
-        "access_token": access_token,
+        "access_token": data.get("access_token"),
         "user": {
             "id": user.get("id"),
             "email": user.get("email"),
@@ -80,17 +58,11 @@ async def google_auth(body: GoogleToken, response: Response):
     }
 
 
-@router.post("/logout")
-async def logout(response: Response):
-    response.delete_cookie(key=COOKIE_NAME, path="/")
-    return {"ok": True}
-
-
 @router.get("/me")
-async def get_me(authorization: str = "", sw_token: str = Cookie("")):
-    """Validate JWT and return user info. Checks cookie first, then Authorization header."""
-    token = sw_token or (authorization or "").replace("Bearer ", "")
-    payload = verify_token(token)
-    if not payload:
+async def get_me(authorization: str = ""):
+    """Validate JWT and return user info."""
+    token = (authorization or "").replace("Bearer ", "")
+    user = await get_user_from_token(token)
+    if not user:
         raise HTTPException(status_code=401, detail="Invalid token")
-    return {"id": payload.get("sub"), "email": payload.get("email", "")}
+    return {"id": user.get("id"), "email": user.get("email", "")}

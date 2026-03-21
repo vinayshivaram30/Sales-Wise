@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI(title="Sales-Wise API")
+app = FastAPI(title="CloseIt - Sales Copilot API")
 
 app.add_middleware(
     CORSMiddleware,

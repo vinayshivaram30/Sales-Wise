@@ -1,4 +1,4 @@
--- Sales-Wise - Supabase schema
+-- CloseIt / Sales Copilot - Supabase schema
 -- Run this in the Supabase SQL editor before starting
 
 -- Enable vector extension for RAG
@@ -78,7 +78,7 @@ create index on public.calls(primary_goal);
 -- Call plans (pre-call output)
 create table public.call_plans (
   id            uuid primary key default gen_random_uuid(),
-  call_id       uuid references public.calls(id) on delete cascade unique,
+  call_id       uuid references public.calls(id) unique,
   questions     jsonb not null,
   meddic_gaps   jsonb not null,
   watch_for     text,
@@ -88,7 +88,7 @@ create table public.call_plans (
 -- Transcript chunks
 create table public.transcript_chunks (
   id        uuid primary key default gen_random_uuid(),
-  call_id   uuid references public.calls(id) on delete cascade,
+  call_id   uuid references public.calls(id),
   seq       integer not null,
   speaker   text,
   text      text not null,
@@ -100,7 +100,7 @@ create table public.transcript_chunks (
 -- Suggestions generated during live call
 create table public.suggestions (
   id            uuid primary key default gen_random_uuid(),
-  call_id       uuid references public.calls(id) on delete cascade,
+  call_id       uuid references public.calls(id),
   seq           integer not null,
   question      text not null,
   meddic_field  text not null,
@@ -113,7 +113,7 @@ create table public.suggestions (
 -- Call summaries (post-call output)
 create table public.call_summaries (
   id            uuid primary key default gen_random_uuid(),
-  call_id       uuid references public.calls(id) on delete cascade unique,
+  call_id       uuid references public.calls(id) unique,
   summary_text  text not null,
   meddic_state  jsonb not null,
   objections    jsonb,

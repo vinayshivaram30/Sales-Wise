@@ -20,7 +20,7 @@ export default function Calls() {
     setLoading(true);
     try {
       const data = await listCalls();
-      setCalls(data.calls || data);
+      setCalls(data);
     } finally {
       setLoading(false);
     }

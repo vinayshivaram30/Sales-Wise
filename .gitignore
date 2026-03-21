@@ -9,5 +9,3 @@ __pycache__/
 .claude/
 gstack/
 .gstack/
-.vercel
-.venv/

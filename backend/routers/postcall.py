@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header, Cookie
+from fastapi import APIRouter, HTTPException, Header
 from db import supabase
 from services.llm import generate_summary
 from auth_utils import get_user_id_from_token
@@ -6,17 +6,17 @@ from auth_utils import get_user_id_from_token
 router = APIRouter()
 
 
-def _extract_user_id(authorization: str = "", sw_token: str = "") -> str:
-    token = sw_token or (authorization or "").replace("Bearer ", "")
-    user_id = get_user_id_from_token(token)
+async def get_user_id(authorization: str) -> str:
+    token = (authorization or "").replace("Bearer ", "")
+    user_id = await get_user_id_from_token(token)
     if not user_id:
         raise HTTPException(status_code=401, detail="Unauthorized")
     return str(user_id)
 
 
 @router.post("/{call_id}/summarise")
-async def summarise_call(call_id: str, authorization: str = Header(""), sw_token: str = Cookie("")):
-    _extract_user_id(authorization, sw_token)
+async def summarise_call(call_id: str, authorization: str = Header("")):
+    await get_user_id(authorization)
 
     chunks_res = supabase.table("transcript_chunks").select("*") \
         .eq("call_id", call_id).order("seq").execute()
@@ -53,8 +53,8 @@ async def summarise_call(call_id: str, authorization: str = Header(""), sw_token
 
 
 @router.get("/{call_id}/summary")
-async def get_summary(call_id: str, authorization: str = Header(""), sw_token: str = Cookie("")):
-    _extract_user_id(authorization, sw_token)
+async def get_summary(call_id: str, authorization: str = Header("")):
+    await get_user_id(authorization)
     result = supabase.table("call_summaries").select("*").eq("call_id", call_id).single().execute()
     if not result.data:
         raise HTTPException(status_code=404, detail="Summary not found")
