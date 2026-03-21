@@ -1,25 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { ChevronDown } from 'lucide-react';
 import { generatePlan, getPlan, updateCall, getCallDetail } from '../lib/api';
 import CallProgressBar from '../components/CallProgressBar';
 import { MEDDIC_LABELS } from '../lib/constants';
-
-const DARK = {
-  bg: '#0f0f0f',
-  card: '#1a1a1a',
-  field: '#252525',
-  border: '#333',
-  label: '#9ca3af',
-  text: '#f3f4f6',
-  accent: '#6366f1',
-  required: '#3b82f6',
-  optional: '#6b7280',
-  red: '#ef4444',
-  orange: '#f59e0b',
-  green: '#22c55e',
-  purple: '#a855f7',
-  teal: '#14b8a6',
-};
 
 type PrecallContext = {
   company?: string;
@@ -77,32 +61,44 @@ const defaultContext: PrecallContext = {
   open_objections_from_history: 'Bad past experience with a coaching tool · Economic buyer not looped in yet',
 };
 
-function SectionCard({ title, required, children }: { title: string; required?: boolean; children: React.ReactNode }) {
+function SectionCard({ title, required, children, collapsible, defaultOpen = true }: { title: string; required?: boolean; children: React.ReactNode; collapsible?: boolean; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+
   return (
-    <div style={{ background: DARK.card, borderRadius: 12, padding: 20, marginBottom: 24, border: `1px solid ${DARK.border}` }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <span style={{ fontSize: 11, fontWeight: 600, color: DARK.label, letterSpacing: '0.05em' }}>{title}</span>
-        <span style={{
-          fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 6,
-          background: required ? `${DARK.required}33` : `${DARK.optional}33`,
-          color: required ? DARK.required : DARK.optional
-        }}>{required ? 'Required' : 'Optional'}</span>
+    <div className="rounded-xl bg-dark-card border border-dark-border mb-6 overflow-hidden">
+      <div
+        className={`flex justify-between items-center p-5 ${collapsible ? 'cursor-pointer select-none' : ''} ${open ? 'pb-0' : ''}`}
+        onClick={collapsible ? () => setOpen(o => !o) : undefined}
+        role={collapsible ? 'button' : undefined}
+        tabIndex={collapsible ? 0 : undefined}
+        onKeyDown={collapsible ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(o => !o); } } : undefined}
+        aria-expanded={collapsible ? open : undefined}
+      >
+        <div className="flex items-center gap-2">
+          {collapsible && (
+            <ChevronDown className={`w-4 h-4 text-dark-muted transition-transform ${open ? 'rotate-0' : '-rotate-90'}`} />
+          )}
+          <span className="text-xs font-semibold text-dark-label tracking-[0.05em] uppercase">{title}</span>
+        </div>
+        <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${required ? 'bg-blue-500/20 text-blue-500' : 'bg-dark-muted/20 text-dark-muted'}`}>
+          {required ? 'Required' : 'Optional'}
+        </span>
       </div>
-      {children}
+      {open && <div className="p-5 pt-4">{children}</div>}
     </div>
   );
 }
 
 function FieldBox({ label, value, onChange, placeholder, rows = 1 }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; rows?: number }) {
   return (
-    <div style={{ marginBottom: 14 }}>
-      <label style={{ fontSize: 11, color: DARK.label, display: 'block', marginBottom: 4 }}>{label}</label>
+    <div className="mb-3.5">
+      <label className="text-xs text-dark-label block mb-1">{label}</label>
       {rows > 1 ? (
         <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows}
-          style={{ width: '100%', padding: 10, background: DARK.field, border: `1px solid ${DARK.border}`, borderRadius: 8, color: DARK.text, fontSize: 13, resize: 'vertical', boxSizing: 'border-box' }} />
+          className="w-full p-2.5 bg-dark-field border border-dark-border rounded-lg text-dark-text text-[13px] resize-y outline-none focus:border-accent" />
       ) : (
         <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-          style={{ width: '100%', padding: 10, background: DARK.field, border: `1px solid ${DARK.border}`, borderRadius: 8, color: DARK.text, fontSize: 13, boxSizing: 'border-box' }} />
+          className="w-full p-2.5 bg-dark-field border border-dark-border rounded-lg text-dark-text text-[13px] outline-none focus:border-accent" />
       )}
     </div>
   );
@@ -110,12 +106,12 @@ function FieldBox({ label, value, onChange, placeholder, rows = 1 }: { label: st
 
 function GoalItem({ label, color, value, onChange, placeholder }: { label: string; color: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
-    <div style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: `1px solid ${DARK.border}` }}>
-      <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0, marginTop: 6 }} />
-      <div style={{ flex: 1 }}>
-        <label style={{ fontSize: 11, color: DARK.label, display: 'block', marginBottom: 4 }}>{label}</label>
+    <div className="flex gap-3 py-3 border-b border-dark-border">
+      <span className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${color}`} />
+      <div className="flex-1">
+        <label className="text-xs text-dark-label block mb-1">{label}</label>
         <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={2}
-          style={{ width: '100%', padding: 10, background: DARK.field, border: `1px solid ${DARK.border}`, borderRadius: 8, color: DARK.text, fontSize: 13, resize: 'vertical', boxSizing: 'border-box' }} />
+          className="w-full p-2.5 bg-dark-field border border-dark-border rounded-lg text-dark-text text-[13px] resize-y outline-none focus:border-accent" />
       </div>
     </div>
   );
@@ -129,6 +125,9 @@ export default function PreCall() {
   const [planError, setPlanError] = useState('');
   const [callIdState, setCallIdState] = useState<string | null>(callId || null);
   const [meetUrl, setMeetUrl] = useState('');
+  const [showDealDetails, setShowDealDetails] = useState(() =>
+    !!(ctx.deal_size_est || ctx.decision_timeline || ctx.economic_buyer || ctx.champion_likelihood)
+  );
 
   useEffect(() => {
     if (callId) setCallIdState(callId);
@@ -245,24 +244,28 @@ export default function PreCall() {
 
   const hasRequired = ctx.company && ctx.contact && ctx.product_name && ctx.core_value_proposition && ctx.primary_goal;
 
-  if (!callIdState) return <div style={{ padding: 32, color: DARK.text }}>No call selected. <Link to="/calls" style={{ color: DARK.accent }}>Back to calls</Link></div>;
+  if (!callIdState) return (
+    <div className="p-8 text-dark-text">
+      No call selected. <Link to="/calls" className="text-accent hover:text-accent-hover">Back to calls</Link>
+    </div>
+  );
 
   return (
     <>
     <CallProgressBar current="precall" />
-    <div style={{ minHeight: '100vh', background: DARK.bg, padding: 32, color: DARK.text }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ marginBottom: 24 }}>
-          <Link to="/calls" style={{ fontSize: 14, color: DARK.accent, textDecoration: 'none' }}>← Back to calls</Link>
+    <div className="min-h-screen bg-dark-bg p-8 text-dark-text">
+      <div className="max-w-[1120px] mx-auto">
+        <div className="mb-6">
+          <Link to="/calls" className="text-sm text-accent hover:text-accent-hover no-underline">&larr; Back to calls</Link>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 32 }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 600, marginBottom: 24 }}>Pre-call setup</h1>
+            <h1 className="text-2xl font-bold font-display tracking-[-0.01em] mb-6">Pre-call setup</h1>
 
             {/* 1. Customer / Company Context */}
             <SectionCard title="CUSTOMER / COMPANY CONTEXT" required>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FieldBox label="Company" value={ctx.company || ''} onChange={set('company')} placeholder="Fieldmotion · B2B SaaS · Field service management · 220 employees" />
                 <FieldBox label="Contact" value={ctx.contact || ''} onChange={set('contact')} placeholder="Priya Nair · VP of Sales · 4 yrs tenure · Reports to CRO" />
                 <FieldBox label="Sales team size" value={ctx.sales_team_size || ''} onChange={set('sales_team_size')} placeholder="8 AEs + 3 SDRs · Quota: $1.2M ARR/AE · ~68% attainment" />
@@ -270,156 +273,166 @@ export default function PreCall() {
                 <FieldBox label="Known pain" value={ctx.known_pain || ''} onChange={set('known_pain')} rows={2} placeholder="Reps spend ~40 min/day on CRM. Pipeline reviews feel like guesswork." />
                 <FieldBox label="Deal stage" value={ctx.deal_stage || ''} onChange={set('deal_stage')} placeholder="Stage 2 — Discovery (first call was SDR intro)" />
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${DARK.border}` }}>
-                <FieldBox label="Deal size est." value={ctx.deal_size_est || ''} onChange={set('deal_size_est')} placeholder="$14,400–$28,800 ARR" />
-                <FieldBox label="Decision timeline" value={ctx.decision_timeline || ''} onChange={set('decision_timeline')} placeholder="Q3 budget cycle" />
-                <FieldBox label="Economic buyer" value={ctx.economic_buyer || ''} onChange={set('economic_buyer')} placeholder="CRO (not yet engaged)" />
-                <FieldBox label="Champion likelihood" value={ctx.champion_likelihood || ''} onChange={set('champion_likelihood')} placeholder="High — Priya raised pain unprompted" />
-              </div>
+              {!showDealDetails ? (
+                <button
+                  onClick={() => setShowDealDetails(true)}
+                  className="mt-4 text-xs text-dark-label hover:text-dark-text transition-colors flex items-center gap-1"
+                >
+                  <ChevronDown className="w-3.5 h-3.5" />
+                  Show deal details (size, timeline, buyer, champion)
+                </button>
+              ) : (
+                <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-dark-border">
+                  <FieldBox label="Deal size est." value={ctx.deal_size_est || ''} onChange={set('deal_size_est')} placeholder="$14,400–$28,800 ARR" />
+                  <FieldBox label="Decision timeline" value={ctx.decision_timeline || ''} onChange={set('decision_timeline')} placeholder="Q3 budget cycle" />
+                  <FieldBox label="Economic buyer" value={ctx.economic_buyer || ''} onChange={set('economic_buyer')} placeholder="CRO (not yet engaged)" />
+                  <FieldBox label="Champion likelihood" value={ctx.champion_likelihood || ''} onChange={set('champion_likelihood')} placeholder="High — Priya raised pain unprompted" />
+                </div>
+              )}
             </SectionCard>
 
-            {/* 2. Product Context */}
-            <SectionCard title="PRODUCT / SERVICE CONTEXT" required>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            {/* 2. Product Context — collapsible, auto-open if key fields empty */}
+            <SectionCard title="PRODUCT / SERVICE CONTEXT" required collapsible defaultOpen={!ctx.product_name || !ctx.core_value_proposition}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FieldBox label="Product name" value={ctx.product_name || ''} onChange={set('product_name')} placeholder="Velaris (Revenue Intelligence Platform)" />
                 <FieldBox label="Category" value={ctx.category || ''} onChange={set('category')} placeholder="B2B SaaS · Revenue Operations" />
-                <div style={{ gridColumn: '1 / -1' }}>
+                <div className="col-span-full">
                   <FieldBox label="Core value proposition" value={ctx.core_value_proposition || ''} onChange={set('core_value_proposition')} rows={2} placeholder="Consolidates pipeline, call recordings, CRM into single dashboard — eliminates manual updates" />
                 </div>
                 <FieldBox label="Pricing" value={ctx.pricing || ''} onChange={set('pricing')} placeholder="$180/seat/month · 5-seat minimum · Annual contract" />
                 <FieldBox label="Key differentiators" value={ctx.key_differentiators || ''} onChange={set('key_differentiators')} rows={2} placeholder="Real-time live-call coaching vs Gong's post-call only. Native Salesforce write-back." />
                 <FieldBox label="Known objections we handle" value={ctx.known_objections || ''} onChange={set('known_objections')} rows={2} placeholder="Budget, adoption, security" />
               </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+              <div className="flex gap-2 mt-4 flex-wrap">
                 {['MEDDIC-aligned', 'Challenger sell', 'Economic buyer focus'].map(tag => (
-                  <span key={tag} style={{
-                    fontSize: 11, padding: '4px 10px', borderRadius: 6,
-                    background: tag === 'MEDDIC-aligned' ? `${DARK.purple}33` : tag === 'Challenger sell' ? `${DARK.orange}33` : `${DARK.teal}33`,
-                    color: tag === 'MEDDIC-aligned' ? DARK.purple : tag === 'Challenger sell' ? DARK.orange : DARK.teal
-                  }}>{tag}</span>
+                  <span key={tag} className={`text-xs px-2.5 py-1 rounded-md ${
+                    tag === 'MEDDIC-aligned' ? 'bg-purple-500/20 text-purple-500' :
+                    tag === 'Challenger sell' ? 'bg-warning/20 text-warning' :
+                    'bg-teal-500/20 text-teal-500'
+                  }`}>{tag}</span>
                 ))}
               </div>
             </SectionCard>
 
             {/* 3. Objectives / Goals */}
             <SectionCard title="OBJECTIVES / GOALS" required>
-              <GoalItem label="Primary goal" color={DARK.red} value={ctx.primary_goal || ''} onChange={set('primary_goal')} placeholder="Qualify economic buyer. Get Priya to commit to 3-way call with CRO." />
-              <GoalItem label="Secondary goal" color={DARK.red} value={ctx.secondary_goal || ''} onChange={set('secondary_goal')} placeholder="Surface business impact of 68% attainment — translate pain to dollar figure." />
-              <GoalItem label="Demo focus" color={DARK.orange} value={ctx.demo_focus || ''} onChange={set('demo_focus')} placeholder="Show live-call coaching first (10 min). Defer CRM automation unless asked." />
-              <GoalItem label="Objection to pre-empt" color={DARK.orange} value={ctx.objection_to_preempt || ''} onChange={set('objection_to_preempt')} placeholder="Address bad past experience with coaching tool proactively." />
-              <GoalItem label="Exit criteria" color={DARK.green} value={ctx.exit_criteria || ''} onChange={set('exit_criteria')} placeholder="CRO intro scheduled, or Priya sends business case email. No 'I'll think about it'." />
+              <GoalItem label="Primary goal" color="bg-danger" value={ctx.primary_goal || ''} onChange={set('primary_goal')} placeholder="Qualify economic buyer. Get Priya to commit to 3-way call with CRO." />
+              <GoalItem label="Secondary goal" color="bg-danger" value={ctx.secondary_goal || ''} onChange={set('secondary_goal')} placeholder="Surface business impact of 68% attainment — translate pain to dollar figure." />
+              <GoalItem label="Demo focus" color="bg-warning" value={ctx.demo_focus || ''} onChange={set('demo_focus')} placeholder="Show live-call coaching first (10 min). Defer CRM automation unless asked." />
+              <GoalItem label="Objection to pre-empt" color="bg-warning" value={ctx.objection_to_preempt || ''} onChange={set('objection_to_preempt')} placeholder="Address bad past experience with coaching tool proactively." />
+              <GoalItem label="Exit criteria" color="bg-success" value={ctx.exit_criteria || ''} onChange={set('exit_criteria')} placeholder="CRO intro scheduled, or Priya sends business case email. No 'I'll think about it'." />
             </SectionCard>
 
-            {/* 4. Past Conversations */}
-            <SectionCard title="PAST CONVERSATIONS" required={false}>
+            {/* 4. Past Conversations — collapsed by default */}
+            <SectionCard title="PAST CONVERSATIONS" required={false} collapsible defaultOpen={false}>
               {(ctx.past_conversations || []).map((conv, i) => (
-                <div key={i} style={{ marginBottom: 16, padding: 12, background: DARK.field, borderRadius: 8, border: `1px solid ${DARK.border}` }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                <div key={i} className="mb-4 p-3 bg-dark-field rounded-lg border border-dark-border">
+                  <div className="grid grid-cols-2 gap-2 mb-2">
                     <input value={conv.date || ''} onChange={e => {
                       const next = [...(ctx.past_conversations || [])];
                       next[i] = { ...next[i], date: e.target.value };
                       setCtx(prev => ({ ...prev, past_conversations: next }));
-                    }} placeholder="14 Mar 2026" style={{ padding: 6, background: DARK.bg, border: `1px solid ${DARK.border}`, borderRadius: 4, color: DARK.text, fontSize: 12 }} />
+                    }} placeholder="14 Mar 2026" className="p-1.5 bg-dark-bg border border-dark-border rounded text-dark-text text-xs outline-none focus:border-accent" />
                     <input value={conv.type || ''} onChange={e => {
                       const next = [...(ctx.past_conversations || [])];
                       next[i] = { ...next[i], type: e.target.value };
                       setCtx(prev => ({ ...prev, past_conversations: next }));
-                    }} placeholder="SDR intro call" style={{ padding: 6, background: DARK.bg, border: `1px solid ${DARK.border}`, borderRadius: 4, color: DARK.text, fontSize: 12 }} />
+                    }} placeholder="SDR intro call" className="p-1.5 bg-dark-bg border border-dark-border rounded text-dark-text text-xs outline-none focus:border-accent" />
                     <input value={conv.duration || ''} onChange={e => {
                       const next = [...(ctx.past_conversations || [])];
                       next[i] = { ...next[i], duration: e.target.value };
                       setCtx(prev => ({ ...prev, past_conversations: next }));
-                    }} placeholder="18 min" style={{ padding: 6, background: DARK.bg, border: `1px solid ${DARK.border}`, borderRadius: 4, color: DARK.text, fontSize: 12 }} />
+                    }} placeholder="18 min" className="p-1.5 bg-dark-bg border border-dark-border rounded text-dark-text text-xs outline-none focus:border-accent" />
                     <input value={conv.channel || ''} onChange={e => {
                       const next = [...(ctx.past_conversations || [])];
                       next[i] = { ...next[i], channel: e.target.value };
                       setCtx(prev => ({ ...prev, past_conversations: next }));
-                    }} placeholder="Zoom" style={{ padding: 6, background: DARK.bg, border: `1px solid ${DARK.border}`, borderRadius: 4, color: DARK.text, fontSize: 12 }} />
+                    }} placeholder="Zoom" className="p-1.5 bg-dark-bg border border-dark-border rounded text-dark-text text-xs outline-none focus:border-accent" />
                   </div>
                   <textarea value={conv.content || ''} onChange={e => {
                     const next = [...(ctx.past_conversations || [])];
                     next[i] = { ...next[i], content: e.target.value };
                     setCtx(prev => ({ ...prev, past_conversations: next }));
-                  }} placeholder="Summary of the conversation..." rows={2} style={{ width: '100%', padding: 8, background: DARK.bg, border: `1px solid ${DARK.border}`, borderRadius: 4, color: DARK.text, fontSize: 12, marginBottom: 8, boxSizing: 'border-box' }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  }} placeholder="Summary of the conversation..." rows={2} className="w-full p-2 bg-dark-bg border border-dark-border rounded text-dark-text text-xs mb-2 outline-none focus:border-accent" />
+                  <div className="flex justify-between items-center">
                     <input value={conv.outcome || ''} onChange={e => {
                       const next = [...(ctx.past_conversations || [])];
                       next[i] = { ...next[i], outcome: e.target.value };
                       setCtx(prev => ({ ...prev, past_conversations: next }));
-                    }} placeholder="Outcome: Demo booked" style={{ flex: 1, marginRight: 8, padding: 6, background: DARK.bg, border: `1px solid ${DARK.border}`, borderRadius: 4, color: DARK.text, fontSize: 12 }} />
+                    }} placeholder="Outcome: Demo booked" className="flex-1 mr-2 p-1.5 bg-dark-bg border border-dark-border rounded text-dark-text text-xs outline-none focus:border-accent" />
                     <button onClick={() => setCtx(prev => ({ ...prev, past_conversations: (prev.past_conversations || []).filter((_, j) => j !== i) }))}
-                      style={{ padding: '6px 10px', fontSize: 11, background: 'transparent', border: `1px solid ${DARK.red}66`, borderRadius: 4, color: DARK.red, cursor: 'pointer' }}>Remove</button>
+                      className="px-2.5 py-1.5 text-xs bg-transparent border border-danger/40 rounded text-danger cursor-pointer hover:bg-danger/10 transition-colors">Remove</button>
                   </div>
                 </div>
               ))}
               <button onClick={() => setCtx(prev => ({ ...prev, past_conversations: [...(prev.past_conversations || []), { date: '', type: '', duration: '', channel: '', content: '', outcome: '' }] }))}
-                style={{ padding: '8px 14px', fontSize: 12, background: DARK.field, border: `1px solid ${DARK.border}`, borderRadius: 6, color: DARK.text, cursor: 'pointer', marginBottom: 16 }}>
+                className="px-3.5 py-2 text-xs bg-dark-field border border-dark-border rounded-md text-dark-text cursor-pointer hover:bg-dark-card transition-colors mb-4">
                 + Add conversation
               </button>
               <FieldBox label="Open objections from history" value={ctx.open_objections_from_history || ''} onChange={set('open_objections_from_history')} placeholder="Bad past experience with coaching tool · Economic buyer not looped in" />
             </SectionCard>
 
             <button onClick={handleGenerate} disabled={loading || !hasRequired}
-              style={{ width: '100%', padding: 14, background: DARK.accent, color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
+              className="w-full py-3.5 bg-accent text-white rounded-[10px] text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent-hover transition-colors cursor-pointer">
               {loading ? 'Generating...' : 'Generate call plan'}
             </button>
             {planError && (
-              <div style={{ marginTop: 12, padding: 12, background: `${DARK.red}22`, border: `1px solid ${DARK.red}66`, borderRadius: 8 }}>
-                <p style={{ margin: 0, fontSize: 13, color: DARK.red }}>{planError}</p>
+              <div className="mt-3 p-3 bg-danger/10 border border-danger/40 rounded-lg">
+                <p className="m-0 text-[13px] text-danger">{planError}</p>
               </div>
             )}
           </div>
 
           {/* Right: Call plan output */}
-          <div style={{ position: 'sticky', top: 24 }}>
-            {!plan && <div style={{ color: DARK.label, marginTop: 60, textAlign: 'center' }}>Fill in required context and generate your plan</div>}
+          <div className="lg:sticky lg:top-6">
+            {!plan && <div className="text-dark-label mt-[60px] text-center">Fill in required context and generate your plan</div>}
             {!!plan && (
-              <div style={{ background: DARK.card, borderRadius: 12, padding: 20, border: `1px solid ${DARK.border}` }}>
-                <h2 style={{ marginBottom: 16, fontSize: 18 }}>Call plan</h2>
-                <div style={{ marginBottom: 20 }}>
-                  <p style={{ fontSize: 11, fontWeight: 600, color: DARK.label, textTransform: 'uppercase', marginBottom: 8 }}>MEDDIC gaps</p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <div className="rounded-xl bg-dark-card border border-dark-border p-5">
+                <h2 className="mb-4 text-lg">Call plan</h2>
+                <div className="mb-5">
+                  <p className="text-xs font-semibold text-dark-label uppercase mb-2">MEDDIC gaps</p>
+                  <div className="flex flex-wrap gap-1.5">
                     {Object.entries((plan.meddic_gaps as Record<string, boolean>) || {}).map(([k, filled]) => (
-                      <span key={k} style={{ padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600, background: filled ? `${DARK.green}33` : DARK.field, color: filled ? DARK.green : DARK.label }}>
-                        {filled ? '✓ ' : ''}{MEDDIC_LABELS[k] || k}
+                      <span key={k} className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${filled ? 'bg-success/20 text-success' : 'bg-dark-field text-dark-label'}`}>
+                        {filled ? '\u2713 ' : ''}{MEDDIC_LABELS[k] || k}
                       </span>
                     ))}
                   </div>
                 </div>
-                <div style={{ marginBottom: 20 }}>
-                  <p style={{ fontSize: 11, fontWeight: 600, color: DARK.label, textTransform: 'uppercase', marginBottom: 8 }}>Priority questions</p>
+                <div className="mb-5">
+                  <p className="text-xs font-semibold text-dark-label uppercase mb-2">Priority questions</p>
                   {((plan.questions as Array<{ question: string; meddic_field: string; why: string; priority: number }>) || []).map((q, i) => (
-                    <div key={i} style={{ background: DARK.field, borderRadius: 8, padding: 12, marginBottom: 8, borderLeft: `3px solid ${DARK.accent}` }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: DARK.accent }}>{MEDDIC_LABELS[q.meddic_field] || q.meddic_field}</span>
-                        <span style={{ fontSize: 10, color: DARK.label }}>#{q.priority}</span>
+                    <div key={i} className="bg-dark-field rounded-lg p-3 mb-2 border-l-[3px] border-l-accent">
+                      <div className="flex justify-between mb-1">
+                        <span className="text-xs font-semibold text-accent">{MEDDIC_LABELS[q.meddic_field] || q.meddic_field}</span>
+                        <span className="text-xs text-dark-label">#{q.priority}</span>
                       </div>
-                      <p style={{ margin: 0, fontSize: 13 }}>&quot;{q.question}&quot;</p>
-                      <p style={{ margin: '4px 0 0', fontSize: 11, color: DARK.label }}>{q.why}</p>
+                      <p className="m-0 text-[13px]">&quot;{q.question}&quot;</p>
+                      <p className="mt-1 mb-0 text-xs text-dark-label">{q.why}</p>
                     </div>
                   ))}
                 </div>
                 {!!plan.watch_for && (
-                  <div style={{ background: `${DARK.orange}22`, border: `1px solid ${DARK.orange}66`, borderRadius: 8, padding: 12, marginBottom: 20 }}>
-                    <p style={{ fontSize: 11, fontWeight: 600, color: DARK.orange, margin: '0 0 4px' }}>Watch for</p>
-                    <p style={{ margin: 0, fontSize: 13, color: DARK.text }}>{String(plan.watch_for)}</p>
+                  <div className="bg-warning/10 border border-warning/40 rounded-lg p-3 mb-5">
+                    <p className="text-xs font-semibold text-warning mb-1 mt-0">Watch for</p>
+                    <p className="m-0 text-[13px] text-dark-text">{String(plan.watch_for)}</p>
                   </div>
                 )}
-                <div style={{ marginBottom: 12 }}>
-                  <label style={{ fontSize: 11, color: DARK.label, display: 'block', marginBottom: 4 }}>Google Meet link</label>
+                <div className="mb-3">
+                  <label className="text-xs text-dark-label block mb-1">Google Meet link</label>
                   <input
                     value={meetUrl}
                     onChange={e => setMeetUrl(e.target.value)}
                     placeholder="https://meet.google.com/abc-defg-hij"
-                    style={{ width: '100%', padding: 10, background: DARK.field, border: `1px solid ${DARK.border}`, borderRadius: 8, color: DARK.text, fontSize: 13, boxSizing: 'border-box' }}
+                    className="w-full p-2.5 bg-dark-field border border-dark-border rounded-lg text-dark-text text-[13px] outline-none focus:border-accent"
                   />
-                  <p style={{ fontSize: 10, color: DARK.label, marginTop: 4 }}>
+                  <p className="text-xs text-dark-label mt-1">
                     Paste your Meet link, or leave blank to open meet.google.com
                   </p>
                 </div>
                 <button onClick={launchCopilot}
-                  style={{ width: '100%', padding: 12, background: DARK.green, color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-                  Join Meet &amp; start copilot →
+                  className="w-full py-3 bg-success text-white rounded-lg text-sm font-semibold hover:bg-success/90 transition-colors cursor-pointer">
+                  Join Meet &amp; start copilot &rarr;
                 </button>
               </div>
             )}

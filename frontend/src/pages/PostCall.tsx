@@ -4,6 +4,8 @@ import { ArrowLeft, RefreshCw, CheckCircle, AlertCircle, Target } from 'lucide-r
 import { summariseCall, getSummary, getCallDetail } from '../lib/api';
 import CallProgressBar from '../components/CallProgressBar';
 import { MEDDIC_LABELS } from '../lib/constants';
+import SectionCard from '../components/SectionCard';
+import Spinner from '../components/Spinner';
 
 export default function PostCall() {
   const { callId } = useParams<{ callId: string }>();
@@ -62,18 +64,18 @@ export default function PostCall() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32">
-        <div className="w-6 h-6 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
-        <span className="ml-3 text-sm text-[#8b8ba0]">Loading...</span>
+        <Spinner label="Loading" />
+        <span className="ml-3 text-sm text-dark-label">Loading...</span>
       </div>
     );
   }
 
   if (!detail) {
     return (
-      <div className="max-w-[1100px] mx-auto px-8 py-10">
-        <div className="bg-[#12121a] border border-[#2a2a3a] rounded-xl p-12 text-center">
-          <AlertCircle className="w-10 h-10 text-[#5a5a70] mx-auto mb-3" />
-          <p className="text-[#8b8ba0] mb-4">Call not found.</p>
+      <div className="max-w-[1120px] mx-auto px-8 py-10">
+        <div className="bg-dark-surface border border-dark-border rounded-xl p-12 text-center">
+          <AlertCircle className="w-10 h-10 text-dark-muted mx-auto mb-3" />
+          <p className="text-dark-label mb-4">Call not found.</p>
           <Link to="/calls" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">
             Back to calls
           </Link>
@@ -88,7 +90,7 @@ export default function PostCall() {
   return (
     <>
     <CallProgressBar current="postcall" />
-    <div className="max-w-[1100px] mx-auto px-8 py-10">
+    <div className="max-w-[1120px] mx-auto px-8 py-10">
       {summaryError && (
         <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3">
           <p className="text-sm text-red-400">{summaryError}</p>
@@ -103,7 +105,7 @@ export default function PostCall() {
           <ArrowLeft className="w-4 h-4" />
           Back to calls
         </Link>
-        <h1 className="text-2xl font-semibold text-[#e8e8f0]">
+        <h1 className="text-2xl font-bold text-dark-text font-display tracking-[-0.01em]">
           {(detail.name as string) || 'Call'}
         </h1>
       </div>
@@ -113,40 +115,28 @@ export default function PostCall() {
         {/* Left Column */}
         <div className="flex flex-col gap-6">
           {/* Transcript */}
-          <div className="bg-[#12121a] border border-[#2a2a3a] rounded-xl p-5">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-[#8b8ba0] mb-4">
-              Transcript
-            </h2>
+          <SectionCard title="Transcript">
             <div className="max-h-72 overflow-y-auto pr-2 scrollbar-thin">
               {transcriptChunks.length > 0 ? transcriptChunks.map((c, i) => (
                 <p key={i} className="text-sm leading-relaxed text-[#c0c0d0] mb-2">{c.text}</p>
               )) : (
-                <p className="text-sm text-[#5a5a70] italic">No transcript yet</p>
+                <p className="text-sm text-dark-muted italic">No transcript yet</p>
               )}
             </div>
-          </div>
+          </SectionCard>
 
           {/* Summary */}
           {summary && (
-            <div className="bg-[#12121a] border border-[#2a2a3a] rounded-xl p-5">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-[#8b8ba0] mb-4">
-                Summary
-              </h2>
+            <SectionCard title="Summary">
               <p className="text-sm leading-relaxed text-[#c0c0d0]">
                 {String(summary.summary_text)}
               </p>
-            </div>
+            </SectionCard>
           )}
 
           {/* MEDDIC Scorecard */}
           {summary && (
-            <div className="bg-[#12121a] border border-[#2a2a3a] rounded-xl p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <Target className="w-4 h-4 text-indigo-400" />
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-[#8b8ba0]">
-                  MEDDIC Scorecard
-                </h2>
-              </div>
+            <SectionCard title="MEDDIC Scorecard" icon={<Target className="w-4 h-4 text-indigo-400" />}>
               <div className="grid grid-cols-2 gap-3">
                 {Object.entries((summary.meddic_state as Record<string, string>) || {}).map(([k, v]) => (
                   <div
@@ -162,7 +152,7 @@ export default function PostCall() {
                         ? <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
                         : <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
                       }
-                      <p className={`text-[11px] font-semibold ${v ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      <p className={`text-xs font-semibold ${v ? 'text-emerald-400' : 'text-amber-400'}`}>
                         {MEDDIC_LABELS[k]}
                       </p>
                     </div>
@@ -172,15 +162,12 @@ export default function PostCall() {
                   </div>
                 ))}
               </div>
-            </div>
+            </SectionCard>
           )}
 
           {/* Objections */}
           {summary && ((summary.objections as Array<{ text: string; handled: boolean; response: string }>) || []).length > 0 && (
-            <div className="bg-[#12121a] border border-[#2a2a3a] rounded-xl p-5">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-[#8b8ba0] mb-4">
-                Objections
-              </h2>
+            <SectionCard title="Objections">
               <div className="flex flex-col gap-3">
                 {((summary.objections as Array<{ text: string; handled: boolean; response: string }>) || []).map((o, i) => (
                   <div
@@ -189,10 +176,10 @@ export default function PostCall() {
                       o.handled ? 'border-l-emerald-500' : 'border-l-amber-500'
                     }`}
                   >
-                    <p className="text-sm font-medium text-[#e8e8f0] mb-1">
+                    <p className="text-sm font-medium text-dark-text mb-1">
                       &quot;{o.text}&quot;
                     </p>
-                    <p className="text-xs text-[#8b8ba0]">
+                    <p className="text-xs text-dark-label">
                       <span className={o.handled ? 'text-emerald-400' : 'text-red-400'}>
                         {o.handled ? 'Addressed' : 'Unresolved'}:
                       </span>{' '}
@@ -201,20 +188,38 @@ export default function PostCall() {
                   </div>
                 ))}
               </div>
-            </div>
+            </SectionCard>
           )}
         </div>
 
         {/* Right Column */}
         <div className="flex flex-col gap-6">
-          {/* Generate / Regenerate Button */}
+          {/* Empty state — no transcript, no summary */}
+          {!summary && transcriptChunks.length === 0 && !summarising && (
+            <div className="bg-dark-surface border border-dark-border rounded-xl p-8 text-center">
+              <AlertCircle className="w-8 h-8 text-dark-muted mx-auto mb-3" />
+              <p className="text-sm font-medium text-dark-text mb-1">No call data yet</p>
+              <p className="text-xs text-dark-label mb-4">
+                This call hasn't been recorded. Start a live session from the pre-call page to capture transcript and generate insights.
+              </p>
+              <Link
+                to={`/calls/${callId}/precall`}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Go to pre-call setup
+              </Link>
+            </div>
+          )}
+
+          {/* Generate button — has transcript but no summary */}
           {!summary && transcriptChunks.length > 0 && (
             <button
               onClick={handleRegenerate}
               disabled={summarising}
               className="flex items-center justify-center gap-2 w-full py-3 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors"
             >
-              <RefreshCw className={`w-4 h-4 ${summarising ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${summarising ? 'motion-safe:animate-spin' : ''}`} />
               {summarising ? 'Generating...' : 'Generate Summary'}
             </button>
           )}
@@ -222,55 +227,49 @@ export default function PostCall() {
           {summary && (
             <>
               {/* Next Steps */}
-              <div className="bg-[#12121a] border border-[#2a2a3a] rounded-xl p-5">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-[#8b8ba0] mb-4">
-                  Next Steps
-                </h2>
+              <SectionCard title="Next Steps">
                 <div className="flex flex-col gap-3">
                   {((summary.next_steps as Array<{ text: string; owner: string; due: string }>) || []).map((ns, i) => (
                     <label key={i} className="flex items-start gap-3 cursor-pointer group">
                       <input
                         type="checkbox"
-                        className="mt-0.5 w-4 h-4 rounded border-[#2a2a3a] bg-[#1a1a25] text-indigo-500 focus:ring-indigo-500/25 focus:ring-offset-0"
+                        className="mt-0.5 w-4 h-4 rounded border-dark-border bg-dark-card text-indigo-500 focus:ring-indigo-500/25 focus:ring-offset-0"
                       />
                       <div>
-                        <p className="text-sm text-[#e8e8f0] group-hover:text-white transition-colors">
+                        <p className="text-sm text-dark-text group-hover:text-white transition-colors">
                           {ns.text}
                         </p>
-                        <p className="text-xs text-[#5a5a70] mt-0.5">
+                        <p className="text-xs text-dark-muted mt-0.5">
                           Owner: {ns.owner} &middot; Due: {ns.due}
                         </p>
                       </div>
                     </label>
                   ))}
                 </div>
-              </div>
+              </SectionCard>
 
               {/* Deal Stage */}
-              <div className="bg-[#12121a] border border-[#2a2a3a] rounded-xl p-5">
+              <div className="bg-dark-surface border border-dark-border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-medium text-[#e8e8f0]">Deal Stage</h2>
+                  <h2 className="text-sm font-medium text-dark-text">Deal Stage</h2>
                   <span className="text-sm font-semibold text-indigo-400">
                     {String(summary.deal_stage)}
                   </span>
                 </div>
-                <div className="h-2 bg-[#1a1a25] rounded-full overflow-hidden">
+                <div className="h-2 bg-dark-card rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+                    className="h-full bg-indigo-500 rounded-full transition-all duration-200"
                     style={{ width: `${summary.deal_score || 0}%` }}
                   />
                 </div>
-                <p className="text-xs text-[#5a5a70] mt-2">
+                <p className="text-xs text-dark-muted mt-2">
                   {Number(summary.deal_score)}% complete
                 </p>
               </div>
 
               {/* Coaching Notes */}
               {((summary.coaching as Array<{ note: string }>) || []).length > 0 && (
-                <div className="bg-[#12121a] border border-[#2a2a3a] rounded-xl p-5">
-                  <h2 className="text-sm font-semibold uppercase tracking-wider text-[#8b8ba0] mb-4">
-                    Coaching Notes
-                  </h2>
+                <SectionCard title="Coaching Notes">
                   <div className="flex flex-col gap-3">
                     {((summary.coaching as Array<{ note: string }>) || []).map((c, i) => (
                       <div key={i} className="border-l-[3px] border-l-indigo-500 pl-4 py-1">
@@ -278,16 +277,16 @@ export default function PostCall() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </SectionCard>
               )}
 
               {/* Regenerate Button */}
               <button
                 onClick={handleRegenerate}
                 disabled={summarising}
-                className="flex items-center justify-center gap-2 w-full py-3 bg-[#1a1a25] hover:bg-[#22222e] border border-[#2a2a3a] hover:border-indigo-500/30 text-[#8b8ba0] hover:text-indigo-400 text-sm font-medium rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex items-center justify-center gap-2 w-full py-3 bg-dark-card hover:bg-dark-field border border-dark-border hover:border-indigo-500/30 text-dark-label hover:text-indigo-400 text-sm font-medium rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <RefreshCw className={`w-4 h-4 ${summarising ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 ${summarising ? 'motion-safe:animate-spin' : ''}`} />
                 {summarising ? 'Regenerating...' : 'Regenerate Summary'}
               </button>
             </>

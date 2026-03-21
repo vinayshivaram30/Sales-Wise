@@ -84,8 +84,57 @@ Schema in `supabase/schema.sql`. Key tables: `calls`, `call_plans`, `transcript_
 
 If gstack skills aren't working, run `cd .claude/skills/gstack && ./setup` to build the binary and register skills.
 
+## Impeccable (Frontend Design Skills)
+Source: https://github.com/pbakaus/impeccable (v1.5.1)
+21 skills for frontend design quality — expanded skill + 20 steering commands.
+Fights generic LLM design defaults (Inter font, purple gradients, nested cards).
+
+**Commands**:
+- `/teach-impeccable` - One-time setup: gather design context
+- `/audit` - Technical quality checks (a11y, perf, responsive)
+- `/critique` - UX design review
+- `/normalize` - Align with design system
+- `/polish` - Final pass before shipping
+- `/distill` - Strip to essence
+- `/clarify` - Improve unclear UX copy
+- `/optimize` - Performance improvements
+- `/harden` - Error handling, i18n, edge cases
+- `/animate` - Add purposeful motion
+- `/colorize` - Add strategic color
+- `/bolder` - Amplify boring designs
+- `/quieter` - Tone down overly bold designs
+- `/delight` - Add moments of joy
+- `/extract` - Pull into reusable components
+- `/adapt` - Adapt for different devices
+- `/onboard` - Design onboarding flows
+- `/typeset` - Fix typography
+- `/arrange` - Fix layout and spacing
+- `/overdrive` - Technically extraordinary effects
+
+Commands can be combined: `/audit /normalize /polish dashboard`
+
 ## Design System
 Always read DESIGN.md before making any visual or UI decisions. Do not deviate without explicit user approval. In QA mode, flag any code that doesn't match DESIGN.md.
+
+## Design Context (Impeccable)
+
+### Users
+B2B salespeople (high-earning reps, 10-15 discovery calls/month on Google Meet). Multitasking under pressure — need information at a glance with zero friction.
+
+### Brand Personality
+**Calm, Smart, Effortless.** Quietly intelligent co-pilot. Invisible when not needed, precise when it is.
+
+### Aesthetic Direction
+- **References**: Raycast + Arc — polished but utilitarian, smart defaults, feels alive
+- **Anti-references**: NO generic SaaS (purple gradients, "AI-powered" badges), NO Salesforce bloat, NO consumer chat apps
+- **Theme**: Dark mode primary. Indigo interactive, orange live/urgent, cool gray neutrals
+
+### Design Principles
+1. **Invisible until needed** — Zero visual noise during calls
+2. **Scannable in 2 seconds** — Primary message at a glance
+3. **Reduced motion always** — No animated entrances, max 100ms micro-transitions
+4. **Data speaks, decoration listens** — Typography and spacing do hierarchy, not effects
+5. **Earn trust through consistency** — Same patterns everywhere
 
 ## Workflow Rules
 - Enter plan mode for non-trivial tasks (3+ steps or architectural decisions). Re-plan if something goes sideways.

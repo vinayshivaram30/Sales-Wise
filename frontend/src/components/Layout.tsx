@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Outlet, NavLink, Navigate, useNavigate } from "react-router-dom";
 
 export default function Layout() {
@@ -19,7 +19,7 @@ export default function Layout() {
 
   if (!token) return <Navigate to="/login" replace />;
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const user = useMemo(() => JSON.parse(localStorage.getItem("user") || "{}"), []);
   const initials = (user?.name || "U")
     .split(" ")
     .map((s: string) => s[0])
@@ -35,9 +35,9 @@ export default function Layout() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-gray-100 font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="min-h-screen bg-dark-bg text-dark-text font-sans">
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 bg-[#12121a] border-b border-[#2a2a3a]">
+      <nav className="sticky top-0 z-50 bg-dark-surface border-b border-dark-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -70,7 +70,7 @@ export default function Layout() {
                   `relative px-4 py-5 text-sm font-medium transition-colors ${
                     isActive
                       ? "text-indigo-400"
-                      : "text-gray-400 hover:text-gray-200"
+                      : "text-dark-label hover:text-dark-text"
                   }`
                 }
               >
@@ -89,7 +89,7 @@ export default function Layout() {
                   `relative px-4 py-5 text-sm font-medium transition-colors ${
                     isActive
                       ? "text-indigo-400"
-                      : "text-gray-400 hover:text-gray-200"
+                      : "text-dark-label hover:text-dark-text"
                   }`
                 }
               >
@@ -144,16 +144,18 @@ export default function Layout() {
               <button
                 onClick={() => setMenuOpen((prev) => !prev)}
                 className="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-white/5 transition-colors"
-                title={user?.name || "User"}
+                aria-label={`Account menu for ${user?.name || "User"}`}
+                aria-expanded={menuOpen}
+                aria-haspopup="true"
               >
                 <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-xs font-semibold text-white">
                   {initials}
                 </div>
-                <span className="hidden sm:block text-sm text-gray-300 max-w-[140px] truncate">
+                <span className="hidden sm:block text-sm text-dark-label max-w-[140px] truncate">
                   {user?.name || "User"}
                 </span>
                 <svg
-                  className={`w-4 h-4 text-gray-500 transition-transform ${
+                  className={`w-4 h-4 text-dark-muted transition-transform ${
                     menuOpen ? "rotate-180" : ""
                   }`}
                   fill="none"
@@ -170,20 +172,20 @@ export default function Layout() {
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 mt-2 w-56 rounded-xl bg-[#1a1a25] border border-[#2a2a3a] shadow-xl shadow-black/40 py-1">
-                  <div className="px-4 py-3 border-b border-[#2a2a3a]">
+                <div className="absolute right-0 mt-2 w-56 rounded-xl bg-dark-card border border-dark-border shadow-lg shadow-black/20 py-1">
+                  <div className="px-4 py-3 border-b border-dark-border">
                     <p className="text-sm font-medium text-white truncate">
                       {user?.name || "User"}
                     </p>
                     {user?.email && (
-                      <p className="text-xs text-gray-500 truncate mt-0.5">
+                      <p className="text-xs text-dark-muted truncate mt-0.5">
                         {user.email}
                       </p>
                     )}
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2"
+                    className="w-full text-left px-4 py-2.5 text-sm text-dark-label hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2"
                   >
                     <svg
                       className="w-4 h-4"

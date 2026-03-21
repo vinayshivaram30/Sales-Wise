@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { listCalls, createCall } from '../lib/api';
 import { Phone, Plus, Clock, CheckCircle, ArrowRight } from 'lucide-react';
+import Spinner from '../components/Spinner';
+import EmptyState from '../components/EmptyState';
 
 interface Call {
   id: string;
@@ -17,7 +19,8 @@ export default function Dashboard() {
   const [callName, setCallName] = useState('');
   const [creating, setCreating] = useState(false);
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const navigate = useNavigate();
+  const user = useMemo(() => JSON.parse(localStorage.getItem('user') || '{}'), []);
 
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -53,7 +56,7 @@ export default function Dashboard() {
         company_name: '',
         goal: 'Discovery',
       });
-      window.location.href = `/calls/${call.id}/precall`;
+      navigate(`/calls/${call.id}/precall`);
     } finally {
       setCreating(false);
     }
@@ -68,14 +71,14 @@ export default function Dashboard() {
     switch (status) {
       case 'live':
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-[#f97316]/15 px-2.5 py-0.5 text-xs font-medium text-[#f97316]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#f97316] animate-pulse" />
+          <span className="inline-flex items-center gap-1 rounded-full bg-live/15 px-2.5 py-0.5 text-xs font-medium text-live">
+            <span className="h-1.5 w-1.5 rounded-full bg-live motion-safe:animate-pulse" />
             Live
           </span>
         );
       case 'ended':
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-[#8b8ba0]/10 px-2.5 py-0.5 text-xs font-medium text-[#8b8ba0]">
+          <span className="inline-flex items-center gap-1 rounded-full bg-dark-label/10 px-2.5 py-0.5 text-xs font-medium text-dark-label">
             <CheckCircle className="h-3 w-3" />
             Completed
           </span>
@@ -101,19 +104,19 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-10">
+    <div className="mx-auto max-w-[1120px] px-6 py-10">
       {/* Welcome header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#e8e8f0] font-[Satoshi,sans-serif]">
+        <h1 className="text-[32px] font-bold text-dark-text font-display tracking-[-0.02em]">
           Welcome back, {user.name || 'there'}
         </h1>
-        <p className="mt-1 text-[#8b8ba0]">{today}</p>
+        <p className="mt-1 text-dark-label">{today}</p>
       </div>
 
       {/* Quick action card */}
-      <div className="mb-8 rounded-xl border border-[#2a2a3a] bg-[#12121a] p-6">
-        <h2 className="mb-4 text-lg font-semibold text-[#e8e8f0]">
-          Quick Start
+      <div className="mb-8 rounded-xl border border-dark-border bg-dark-surface p-6">
+        <h2 className="mb-4 text-lg font-semibold text-dark-text">
+          Prep your next call
         </h2>
         <div className="flex gap-3">
           <input
@@ -122,15 +125,16 @@ export default function Dashboard() {
             onChange={(e) => setCallName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleStartCall()}
             placeholder="Enter call name..."
-            className="flex-1 rounded-lg border border-[#2a2a3a] bg-[#1a1a25] px-4 py-3 text-[#e8e8f0] placeholder-[#8b8ba0] outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+            className="flex-1 rounded-lg border border-dark-border bg-dark-card px-4 py-3 text-dark-text placeholder-dark-label outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
           />
           <button
             onClick={handleStartCall}
             disabled={creating || !callName.trim()}
+            aria-label="Start new call"
             className="inline-flex items-center gap-2 rounded-lg bg-indigo-500 px-6 py-3 font-medium text-white transition hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {creating ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              <Spinner size="sm" inverted label="Creating call" />
             ) : (
               <Plus className="h-4 w-4" />
             )}
@@ -141,39 +145,39 @@ export default function Dashboard() {
 
       {/* Stats row */}
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-[#2a2a3a] bg-[#12121a] p-5">
-          <div className="mb-1 flex items-center gap-2 text-[#8b8ba0]">
+        <div className="rounded-xl border border-dark-border bg-dark-surface p-5">
+          <div className="mb-1 flex items-center gap-2 text-dark-label">
             <Phone className="h-4 w-4" />
             <span className="text-sm">Total Calls</span>
           </div>
-          <p className="text-3xl font-bold text-[#e8e8f0] font-['Geist_Mono',monospace] tabular-nums">
+          <p className="text-3xl font-bold text-dark-text font-mono tabular-nums">
             {loading ? '--' : totalCalls}
           </p>
         </div>
-        <div className="rounded-xl border border-[#2a2a3a] bg-[#12121a] p-5">
-          <div className="mb-1 flex items-center gap-2 text-[#8b8ba0]">
+        <div className="rounded-xl border border-dark-border bg-dark-surface p-5">
+          <div className="mb-1 flex items-center gap-2 text-dark-label">
             <Clock className="h-4 w-4" />
             <span className="text-sm">Active</span>
           </div>
-          <p className="text-3xl font-bold text-[#f97316] font-['Geist_Mono',monospace] tabular-nums">
+          <p className="text-3xl font-bold text-live font-mono tabular-nums">
             {loading ? '--' : activeCalls}
           </p>
         </div>
-        <div className="rounded-xl border border-[#2a2a3a] bg-[#12121a] p-5">
-          <div className="mb-1 flex items-center gap-2 text-[#8b8ba0]">
+        <div className="rounded-xl border border-dark-border bg-dark-surface p-5">
+          <div className="mb-1 flex items-center gap-2 text-dark-label">
             <CheckCircle className="h-4 w-4" />
             <span className="text-sm">Completed</span>
           </div>
-          <p className="text-3xl font-bold text-[#e8e8f0] font-['Geist_Mono',monospace] tabular-nums">
+          <p className="text-3xl font-bold text-dark-text font-mono tabular-nums">
             {loading ? '--' : completedCalls}
           </p>
         </div>
       </div>
 
       {/* Recent Calls */}
-      <div className="rounded-xl border border-[#2a2a3a] bg-[#12121a]">
-        <div className="border-b border-[#2a2a3a] px-6 py-4">
-          <h2 className="text-lg font-semibold text-[#e8e8f0]">
+      <div className="rounded-xl border border-dark-border bg-dark-surface">
+        <div className="border-b border-dark-border px-6 py-4">
+          <h2 className="text-lg font-semibold text-dark-text">
             Recent Calls
           </h2>
         </div>
@@ -185,35 +189,33 @@ export default function Dashboard() {
         ) : loading ? (
           <div className="px-6 py-4 flex flex-col gap-4">
             {[1, 2, 3].map(i => (
-              <div key={i} className="flex items-center gap-4 animate-pulse">
+              <div key={i} className="flex items-center gap-4 motion-safe:animate-pulse">
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 w-2/3 rounded bg-[#2a2a3a]" />
-                  <div className="h-3 w-1/3 rounded bg-[#2a2a3a]" />
+                  <div className="h-4 w-2/3 rounded bg-dark-border" />
+                  <div className="h-3 w-1/3 rounded bg-dark-border" />
                 </div>
-                <div className="h-6 w-16 rounded-full bg-[#2a2a3a]" />
+                <div className="h-6 w-16 rounded-full bg-dark-border" />
               </div>
             ))}
           </div>
         ) : recentCalls.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-[#1a1a25] flex items-center justify-center">
-              <Phone className="h-5 w-5 text-[#6b6b80]" />
-            </div>
-            <p className="text-[#8b8ba0] text-sm mb-1">No calls yet</p>
-            <p className="text-[#6b6b80] text-xs">Enter a call name above and hit "Start New Call" to begin.</p>
-          </div>
+          <EmptyState
+            icon={<Phone className="h-5 w-5 text-dark-muted" />}
+            message="No calls yet"
+            hint='Enter a call name above and hit "Start New Call" to begin.'
+          />
         ) : (
-          <ul className="divide-y divide-[#2a2a3a]">
+          <ul className="divide-y divide-dark-border">
             {recentCalls.map((call) => (
               <li
                 key={call.id}
-                className="flex items-center justify-between px-6 py-4 transition hover:bg-[#1a1a25]"
+                className="flex items-center justify-between px-6 py-4 transition hover:bg-dark-card"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-[#e8e8f0]">
+                  <p className="truncate font-medium text-dark-text">
                     {call.name}
                   </p>
-                  <p className="mt-0.5 text-sm text-[#8b8ba0]">
+                  <p className="mt-0.5 text-sm text-dark-label">
                     {formatDate(call.created_at)}
                   </p>
                 </div>
