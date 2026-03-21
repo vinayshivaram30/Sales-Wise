@@ -102,27 +102,49 @@ def _build_call_context(call: dict) -> str:
     return "\n".join(parts)
 
 
+# Framework definitions for multi-framework support
+FRAMEWORK_FIELDS = {
+    "MEDDIC": {
+        "fields": "metrics|econ_buyer|decision_criteria|decision_process|pain|champion",
+        "gaps": {"metrics": False, "econ_buyer": False, "decision_criteria": False,
+                 "decision_process": False, "pain": False, "champion": False},
+        "name": "MEDDIC",
+    },
+    "SPIN": {
+        "fields": "situation|problem|implication|need_payoff",
+        "gaps": {"situation": False, "problem": False, "implication": False, "need_payoff": False},
+        "name": "SPIN Selling",
+    },
+    "BANT": {
+        "fields": "budget|authority|need|timeline",
+        "gaps": {"budget": False, "authority": False, "need": False, "timeline": False},
+        "name": "BANT",
+    },
+}
+
+
+def _get_framework(call: dict) -> dict:
+    """Get framework config from call data, defaulting to MEDDIC."""
+    fw = call.get("framework", "MEDDIC").upper()
+    return FRAMEWORK_FIELDS.get(fw, FRAMEWORK_FIELDS["MEDDIC"])
+
+
 async def generate_call_plan(call: dict) -> dict:
     context = _build_call_context(call)
+    fw = _get_framework(call)
+    gaps_json = json.dumps({k: False for k in fw["gaps"]}, indent=4)
     prompt = f"""You are a sales coaching AI. Generate a discovery call plan.
 
 CONTEXT:
 {context}
 
-Generate a call plan using the MEDDIC framework. Return ONLY valid JSON:
+Generate a call plan using the {fw['name']} framework. Return ONLY valid JSON:
 {{
   "questions": [
-    {{"question": "...", "meddic_field": "metrics|econ_buyer|decision_criteria|decision_process|pain|champion", "why": "...", "priority": 1}},
+    {{"question": "...", "meddic_field": "{fw['fields']}", "why": "...", "priority": 1}},
     ... (3-5 questions total, ordered by priority)
   ],
-  "meddic_gaps": {{
-    "metrics": false,
-    "econ_buyer": false,
-    "decision_criteria": false,
-    "decision_process": false,
-    "pain": false,
-    "champion": false
-  }},
+  "meddic_gaps": {gaps_json},
   "watch_for": "One sentence on likely objection or risk."
 }}"""
 
@@ -145,9 +167,13 @@ async def generate_suggestion(
     asked_str = "\n".join(f"- {q}" for q in asked_questions[-10:]) or "None yet"
     meddic_str = json.dumps(meddic_state, indent=2)
 
+    # Detect framework from call_plan context
+    fw_name = call_plan.get("framework", "MEDDIC") if isinstance(call_plan, dict) else "MEDDIC"
+    fw = FRAMEWORK_FIELDS.get(fw_name.upper(), FRAMEWORK_FIELDS["MEDDIC"])
+
     prompt = f"""You are a real-time sales coach. Listen to this live call transcript and suggest the single best next question.
 
-MEDDIC STATE (what we know so far):
+{fw['name']} STATE (what we know so far):
 {meddic_str}
 
 QUESTIONS ALREADY ASKED (do NOT repeat these):
@@ -160,14 +186,14 @@ ADDITIONAL CONTEXT:
 {rag_context if rag_context else "None"}
 
 Rules:
-- Pick the highest-value MEDDIC gap NOT yet filled
+- Pick the highest-value {fw['name']} gap NOT yet filled
 - Make the question natural and conversational, not robotic
 - It must follow logically from what was JUST said in the transcript
 - Return ONLY valid JSON, nothing else:
 
 {{
   "question": "The exact question to ask",
-  "meddic_field": "metrics|econ_buyer|decision_criteria|decision_process|pain|champion",
+  "meddic_field": "{fw['fields']}",
   "why": "One short phrase explaining why this fills the biggest gap right now",
   "confidence": 0.85
 }}"""
