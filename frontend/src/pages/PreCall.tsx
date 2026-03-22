@@ -95,10 +95,10 @@ function FieldBox({ label, value, onChange, placeholder, rows = 1 }: { label: st
       <label className="text-xs text-dark-label block mb-1">{label}</label>
       {rows > 1 ? (
         <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows}
-          className="w-full p-2.5 bg-dark-field border border-dark-border rounded-lg text-dark-text text-[13px] resize-y outline-none focus:border-accent" />
+          className="w-full p-2.5 bg-dark-field border border-dark-border rounded-lg text-dark-text text-sm resize-y outline-none focus:border-accent" />
       ) : (
         <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-          className="w-full p-2.5 bg-dark-field border border-dark-border rounded-lg text-dark-text text-[13px] outline-none focus:border-accent" />
+          className="w-full p-2.5 bg-dark-field border border-dark-border rounded-lg text-dark-text text-sm outline-none focus:border-accent" />
       )}
     </div>
   );
@@ -111,7 +111,7 @@ function GoalItem({ label, color, value, onChange, placeholder }: { label: strin
       <div className="flex-1">
         <label className="text-xs text-dark-label block mb-1">{label}</label>
         <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={2}
-          className="w-full p-2.5 bg-dark-field border border-dark-border rounded-lg text-dark-text text-[13px] resize-y outline-none focus:border-accent" />
+          className="w-full p-2.5 bg-dark-field border border-dark-border rounded-lg text-dark-text text-sm resize-y outline-none focus:border-accent" />
       </div>
     </div>
   );
@@ -378,13 +378,13 @@ export default function PreCall() {
             </button>
             {planError && (
               <div className="mt-3 p-3 bg-danger/10 border border-danger/40 rounded-lg">
-                <p className="m-0 text-[13px] text-danger">{planError}</p>
+                <p className="m-0 text-sm text-danger">{planError}</p>
               </div>
             )}
           </div>
 
           {/* Right: Call plan output */}
-          <div className="lg:sticky lg:top-6">
+          <div className="lg:sticky lg:top-20">
             {!plan && <div className="text-dark-label mt-[60px] text-center">Fill in required context and generate your plan</div>}
             {!!plan && (
               <div className="rounded-xl bg-dark-card border border-dark-border p-5">
@@ -407,7 +407,7 @@ export default function PreCall() {
                         <span className="text-xs font-semibold text-accent">{MEDDIC_LABELS[q.meddic_field] || q.meddic_field}</span>
                         <span className="text-xs text-dark-label">#{q.priority}</span>
                       </div>
-                      <p className="m-0 text-[13px]">&quot;{q.question}&quot;</p>
+                      <p className="m-0 text-sm">&quot;{q.question}&quot;</p>
                       <p className="mt-1 mb-0 text-xs text-dark-label">{q.why}</p>
                     </div>
                   ))}
@@ -415,7 +415,7 @@ export default function PreCall() {
                 {!!plan.watch_for && (
                   <div className="bg-warning/10 border border-warning/40 rounded-lg p-3 mb-5">
                     <p className="text-xs font-semibold text-warning mb-1 mt-0">Watch for</p>
-                    <p className="m-0 text-[13px] text-dark-text">{String(plan.watch_for)}</p>
+                    <p className="m-0 text-sm text-dark-text">{String(plan.watch_for)}</p>
                   </div>
                 )}
                 <div className="mb-3">
@@ -424,7 +424,7 @@ export default function PreCall() {
                     value={meetUrl}
                     onChange={e => setMeetUrl(e.target.value)}
                     placeholder="https://meet.google.com/abc-defg-hij"
-                    className="w-full p-2.5 bg-dark-field border border-dark-border rounded-lg text-dark-text text-[13px] outline-none focus:border-accent"
+                    className="w-full p-2.5 bg-dark-field border border-dark-border rounded-lg text-dark-text text-sm outline-none focus:border-accent"
                   />
                   <p className="text-xs text-dark-label mt-1">
                     Paste your Meet link, or leave blank to open meet.google.com

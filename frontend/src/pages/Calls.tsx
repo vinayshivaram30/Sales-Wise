@@ -113,9 +113,9 @@ export default function Calls() {
 
   const statusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/20';
-      case 'in_progress': return 'bg-amber-500/15 text-amber-500 border border-amber-500/20';
-      case 'failed': return 'bg-red-500/15 text-red-500 border border-red-500/20';
+      case 'completed': return 'bg-success/15 text-success border border-success/20';
+      case 'in_progress': return 'bg-warning/15 text-warning border border-warning/20';
+      case 'failed': return 'bg-danger/15 text-danger border border-danger/20';
       default: return 'bg-dark-border text-dark-label border border-dark-border';
     }
   };
@@ -262,7 +262,7 @@ export default function Calls() {
                     <p className="text-xs font-semibold uppercase tracking-wider text-dark-label mb-2">
                       Transcript
                     </p>
-                    <div className="text-sm leading-relaxed text-[#c0c0d0] max-h-32 overflow-y-auto pr-2 scrollbar-thin">
+                    <div className="text-sm leading-relaxed text-dark-text max-h-32 overflow-y-auto pr-2 scrollbar-thin">
                       {((detail.transcript_chunks as Array<{ text: string }>) || []).length > 0
                         ? (detail.transcript_chunks as Array<{ text: string }>).map((c, i) => (
                             <span key={i}>{c.text} </span>
@@ -276,7 +276,7 @@ export default function Calls() {
                       <p className="text-xs font-semibold uppercase tracking-wider text-dark-label mb-2">
                         Summary
                       </p>
-                      <p className="text-sm leading-relaxed text-[#c0c0d0]">
+                      <p className="text-sm leading-relaxed text-dark-text">
                         {(detail.summary as Record<string, string>).summary_text}
                       </p>
                     </div>

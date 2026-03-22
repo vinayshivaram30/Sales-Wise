@@ -145,7 +145,7 @@ export default function Dashboard() {
 
       {/* Stats row */}
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-dark-border bg-dark-surface p-5">
+        <div className="rounded-xl border border-dark-border border-l-2 border-l-accent bg-dark-surface p-5">
           <div className="mb-1 flex items-center gap-2 text-dark-label">
             <Phone className="h-4 w-4" />
             <span className="text-sm">Total Calls</span>
@@ -154,7 +154,7 @@ export default function Dashboard() {
             {loading ? '--' : totalCalls}
           </p>
         </div>
-        <div className="rounded-xl border border-dark-border bg-dark-surface p-5">
+        <div className="rounded-xl border border-dark-border border-l-2 border-l-live bg-dark-surface p-5">
           <div className="mb-1 flex items-center gap-2 text-dark-label">
             <Clock className="h-4 w-4" />
             <span className="text-sm">Active</span>
@@ -163,7 +163,7 @@ export default function Dashboard() {
             {loading ? '--' : activeCalls}
           </p>
         </div>
-        <div className="rounded-xl border border-dark-border bg-dark-surface p-5">
+        <div className="rounded-xl border border-dark-border border-l-2 border-l-success bg-dark-surface p-5">
           <div className="mb-1 flex items-center gap-2 text-dark-label">
             <CheckCircle className="h-4 w-4" />
             <span className="text-sm">Completed</span>

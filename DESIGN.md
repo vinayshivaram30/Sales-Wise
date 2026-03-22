@@ -13,23 +13,22 @@
 - **Reference sites:** Gong.io (corporate/purple), Apollo.io (warm/editorial), Salesloft.com (enterprise/teal), Claap.io (dark/modern), Oliv.ai (dark/AI-native). Sales-Wise borrows the dark-mode baseline from Claap/Oliv but strips the glow and theatrics.
 
 ## Typography
-- **Display/Hero:** Satoshi (900, 700) — geometric with subtle character, reads as "designed" without being decorative. For product name, page titles, hero headings.
-  - CDN: `https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap`
-- **Body:** Plus Jakarta Sans (300-700) — geometric, friendly, excellent at small sizes. All body text, labels, descriptions.
-  - CDN: `https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap`
-- **UI/Labels:** Same as body (Plus Jakarta Sans)
+- **Display/Hero:** Lexend (800, 700) — clean geometric sans-serif, excellent readability, modern SaaS feel. For product name, page titles, hero headings.
+  - CDN: `https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=swap`
+- **Body:** Lexend (300-600) — same family for uniformity. All body text, labels, descriptions.
+- **UI/Labels:** Same as body (Lexend)
 - **Data/Tables:** Geist Mono (400, 500) — tabular-nums built in. For transcripts, timestamps, call durations, metric values, MEDDIC scores.
   - CDN: `https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-mono/`
 - **Code:** Geist Mono
 - **Scale:**
-  - Display: 48px / Satoshi 900 / -0.03em tracking
-  - H1: 32px / Satoshi 700 / -0.02em
-  - H2: 24px / Satoshi 700 / -0.01em
-  - H3: 18px / Plus Jakarta Sans 600
-  - Body: 16px / Plus Jakarta Sans 400
-  - Body Small: 14px / Plus Jakarta Sans 400
+  - Display: 48px / Lexend 800 / -0.03em tracking
+  - H1: 32px / Lexend 700 / -0.02em
+  - H2: 24px / Lexend 700 / -0.01em
+  - H3: 18px / Lexend 600
+  - Body: 16px / Lexend 400
+  - Body Small: 14px / Lexend 400
   - Mono Data: 13px / Geist Mono 400 / tabular-nums
-  - Overline: 12px / Plus Jakarta Sans 600 / uppercase / 0.05em tracking
+  - Overline: 12px / Lexend 600 / uppercase / 0.05em tracking
 
 ## Color
 
@@ -119,5 +118,5 @@ Dark mode is the default and primary mode. Light mode available via CSS custom p
 |------|----------|-----------|
 | 2026-03-20 | Initial design system created | Created by /design-consultation. Based on competitive research (Gong, Apollo, Salesloft, Claap, Oliv.ai) and product identity as live AI co-pilot. Industrial/utilitarian aesthetic chosen to differentiate from flashy AI-theater competitors. |
 | 2026-03-20 | Orange as live signal color | No competitor uses orange. Creates instant visual hierarchy: indigo = interactive, orange = happening now. Critical for live call scanability. |
-| 2026-03-20 | Satoshi for display type | Geometric character without being decorative. Brand recognition in screenshots and demos. Pairs well with Plus Jakarta Sans body. |
+| 2026-03-22 | Lexend for all typography | Single font family for uniformity. Clean geometric sans-serif with excellent readability at all sizes. Replaces Satoshi (display) + Plus Jakarta Sans (body). |
 | 2026-03-20 | No glow/gradients policy | Deliberate departure from Claap/Oliv luminous effects. Signals seriousness and trust over flash. Faster perceived performance. |

@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
-@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @font-face {
@@ -16,8 +15,8 @@
 }
 
 @theme {
-  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-display: 'Satoshi', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-sans: 'Lexend', system-ui, sans-serif;
+  --font-display: 'Lexend', system-ui, sans-serif;
   --font-mono: 'Geist Mono', 'SF Mono', monospace;
   --color-live: #f97316;
   --color-live-dim: rgba(249, 115, 22, 0.15);
@@ -36,6 +35,8 @@
   --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
+  --color-dark-text-bright: #f8f8ff;
+  --color-info: #3b82f6;
 }
 
 * {

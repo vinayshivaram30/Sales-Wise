@@ -118,7 +118,7 @@ export default function PostCall() {
           <SectionCard title="Transcript">
             <div className="max-h-72 overflow-y-auto pr-2 scrollbar-thin">
               {transcriptChunks.length > 0 ? transcriptChunks.map((c, i) => (
-                <p key={i} className="text-sm leading-relaxed text-[#c0c0d0] mb-2">{c.text}</p>
+                <p key={i} className="text-sm leading-relaxed text-dark-text mb-2">{c.text}</p>
               )) : (
                 <p className="text-sm text-dark-muted italic">No transcript yet</p>
               )}
@@ -128,7 +128,7 @@ export default function PostCall() {
           {/* Summary */}
           {summary && (
             <SectionCard title="Summary">
-              <p className="text-sm leading-relaxed text-[#c0c0d0]">
+              <p className="text-sm leading-relaxed text-dark-text">
                 {String(summary.summary_text)}
               </p>
             </SectionCard>
@@ -143,20 +143,20 @@ export default function PostCall() {
                     key={k}
                     className={`rounded-lg p-3 border ${
                       v
-                        ? 'bg-emerald-500/5 border-emerald-500/20'
-                        : 'bg-amber-500/5 border-amber-500/20'
+                        ? 'bg-success/5 border-success/20'
+                        : 'bg-warning/5 border-warning/20'
                     }`}
                   >
                     <div className="flex items-center gap-1.5 mb-1">
                       {v
-                        ? <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
-                        : <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+                        ? <CheckCircle className="w-3.5 h-3.5 text-success" />
+                        : <AlertCircle className="w-3.5 h-3.5 text-warning" />
                       }
-                      <p className={`text-xs font-semibold ${v ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      <p className={`text-xs font-semibold ${v ? 'text-success' : 'text-warning'}`}>
                         {MEDDIC_LABELS[k]}
                       </p>
                     </div>
-                    <p className={`text-xs leading-relaxed ${v ? 'text-emerald-300/80' : 'text-amber-300/60'}`}>
+                    <p className={`text-xs leading-relaxed ${v ? 'text-success/80' : 'text-warning/60'}`}>
                       {v || 'Not captured'}
                     </p>
                   </div>
@@ -173,14 +173,14 @@ export default function PostCall() {
                   <div
                     key={i}
                     className={`border-l-[3px] pl-4 py-1 ${
-                      o.handled ? 'border-l-emerald-500' : 'border-l-amber-500'
+                      o.handled ? 'border-l-success' : 'border-l-warning'
                     }`}
                   >
                     <p className="text-sm font-medium text-dark-text mb-1">
                       &quot;{o.text}&quot;
                     </p>
                     <p className="text-xs text-dark-label">
-                      <span className={o.handled ? 'text-emerald-400' : 'text-red-400'}>
+                      <span className={o.handled ? 'text-success' : 'text-danger'}>
                         {o.handled ? 'Addressed' : 'Unresolved'}:
                       </span>{' '}
                       {o.response}
@@ -273,7 +273,7 @@ export default function PostCall() {
                   <div className="flex flex-col gap-3">
                     {((summary.coaching as Array<{ note: string }>) || []).map((c, i) => (
                       <div key={i} className="border-l-[3px] border-l-indigo-500 pl-4 py-1">
-                        <p className="text-sm text-[#c0c0d0] leading-relaxed">{c.note}</p>
+                        <p className="text-sm text-dark-text leading-relaxed">{c.note}</p>
                       </div>
                     ))}
                   </div>
