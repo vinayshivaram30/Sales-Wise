@@ -46,7 +46,7 @@ export default function CrmSettings() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-10">
+    <div className="mx-auto max-w-2xl py-2">
       <Link
         to="/dashboard"
         className="inline-flex items-center gap-1.5 text-sm text-indigo-400 hover:text-indigo-300 transition-colors mb-6"

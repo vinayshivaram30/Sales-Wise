@@ -72,7 +72,7 @@ export default function PostCall() {
 
   if (!detail) {
     return (
-      <div className="max-w-[1120px] mx-auto px-8 py-10">
+      <div className="py-2">
         <div className="bg-dark-surface border border-dark-border rounded-xl p-12 text-center">
           <AlertCircle className="w-10 h-10 text-dark-muted mx-auto mb-3" />
           <p className="text-dark-label mb-4">Call not found.</p>
@@ -90,7 +90,7 @@ export default function PostCall() {
   return (
     <>
     <CallProgressBar current="postcall" />
-    <div className="max-w-[1120px] mx-auto px-8 py-10">
+    <div className="py-2">
       {summaryError && (
         <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3">
           <p className="text-sm text-red-400">{summaryError}</p>

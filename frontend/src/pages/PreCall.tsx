@@ -254,7 +254,7 @@ export default function PreCall() {
     <>
     <CallProgressBar current="precall" />
     <div className="min-h-screen bg-dark-bg p-8 text-dark-text">
-      <div className="max-w-[1120px] mx-auto">
+      <div>
         <div className="mb-6">
           <Link to="/calls" className="text-sm text-accent hover:text-accent-hover no-underline">&larr; Back to calls</Link>
         </div>

@@ -37,7 +37,7 @@ export default function Analytics() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[1120px] px-6 py-10">
+      <div className="py-2">
         <h1 className="text-2xl font-bold text-dark-text font-display mb-8">Performance</h1>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           {[1, 2, 3].map(i => (
@@ -53,7 +53,7 @@ export default function Analytics() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-[1120px] px-6 py-10">
+      <div className="py-2">
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-6 text-center">
           <p className="text-red-400 text-sm mb-2">{error}</p>
           <button onClick={loadAnalytics} className="text-sm text-indigo-400 hover:text-indigo-300">Retry</button>
@@ -64,7 +64,7 @@ export default function Analytics() {
 
   if (!data || data.total_calls === 0) {
     return (
-      <div className="mx-auto max-w-[1120px] px-6 py-10">
+      <div className="py-2">
         <h1 className="text-2xl font-bold text-dark-text font-display mb-8">Performance</h1>
         <div className="rounded-xl border border-dark-border bg-dark-surface p-12 text-center">
           <BarChart3 className="w-10 h-10 text-dark-muted mx-auto mb-3" />
@@ -78,7 +78,7 @@ export default function Analytics() {
   const maxStageCount = Math.max(...Object.values(data.deal_stage_distribution), 1);
 
   return (
-    <div className="mx-auto max-w-[1120px] px-6 py-10">
+    <div className="py-2">
       <h1 className="text-2xl font-bold text-dark-text font-display mb-2">Performance</h1>
       <p className="text-dark-label text-sm mb-8">Last 8 weeks</p>
 

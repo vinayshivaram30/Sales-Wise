@@ -104,7 +104,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="mx-auto max-w-[1120px] px-6 py-10">
+    <div>
       {/* Welcome header */}
       <div className="mb-8">
         <h1 className="text-[32px] font-bold text-dark-text font-display tracking-[-0.02em]">

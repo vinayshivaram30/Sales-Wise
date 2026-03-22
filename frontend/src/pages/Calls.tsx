@@ -121,7 +121,7 @@ export default function Calls() {
   };
 
   return (
-    <div className="max-w-[1120px] mx-auto px-8 py-10">
+    <div>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <h1 className="text-2xl font-bold text-dark-text font-display tracking-[-0.01em]">Calls</h1>
