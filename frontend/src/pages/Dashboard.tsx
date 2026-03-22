@@ -4,6 +4,7 @@ import { listCalls, createCall } from '../lib/api';
 import { Phone, Plus, Clock, CheckCircle, ArrowRight } from 'lucide-react';
 import Spinner from '../components/Spinner';
 import EmptyState from '../components/EmptyState';
+import OnboardingWizard from '../components/OnboardingWizard';
 
 interface Call {
   id: string;
@@ -18,6 +19,9 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const [callName, setCallName] = useState('');
   const [creating, setCreating] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => !localStorage.getItem('onboarding_complete')
+  );
 
   const navigate = useNavigate();
   const user = useMemo(() => JSON.parse(localStorage.getItem('user') || '{}'), []);
@@ -108,10 +112,12 @@ export default function Dashboard() {
 
   return (
     <div>
+      {showOnboarding && <OnboardingWizard onComplete={() => setShowOnboarding(false)} />}
+
       {/* Welcome header */}
       <div className="mb-8">
         <h1 className="text-[32px] font-bold text-dark-text font-display tracking-[-0.02em]">
-          Welcome back, {user.name || 'there'}
+          {calls.length === 0 ? 'Welcome' : 'Welcome back'}, {user.name || 'there'}
         </h1>
         <p className="mt-1 text-dark-label">{today}</p>
       </div>
