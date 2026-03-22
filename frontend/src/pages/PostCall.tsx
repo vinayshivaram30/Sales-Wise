@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, CheckCircle, AlertCircle, Target } from 'lucide-react';
+import { ArrowLeft, RefreshCw, CheckCircle, AlertCircle, Target, Copy, ClipboardList } from 'lucide-react';
 import { summariseCall, getSummary, getCallDetail } from '../lib/api';
 import CallProgressBar from '../components/CallProgressBar';
 import { MEDDIC_LABELS } from '../lib/constants';
@@ -13,6 +13,92 @@ export default function PostCall() {
   const [loading, setLoading] = useState(true);
   const [summarising, setSummarising] = useState(false);
   const [summaryError, setSummaryError] = useState('');
+  const [copiedClipboard, setCopiedClipboard] = useState(false);
+  const [copiedCRM, setCopiedCRM] = useState(false);
+
+  const formatAsMarkdown = useCallback((s: Record<string, unknown>) => {
+    const lines: string[] = [];
+    if (s.summary_text) lines.push(`## Summary\n${String(s.summary_text)}`);
+    const meddic = s.meddic_state as Record<string, string> | undefined;
+    if (meddic) {
+      lines.push(`\n## MEDDIC Scorecard`);
+      for (const [k, v] of Object.entries(meddic)) {
+        const label = MEDDIC_LABELS[k] || k;
+        lines.push(`- **${label}:** ${v || 'Not captured'}`);
+      }
+    }
+    const objections = s.objections as Array<{ text: string; handled: boolean; response: string }> | undefined;
+    if (objections?.length) {
+      lines.push(`\n## Objections`);
+      for (const o of objections) {
+        lines.push(`- "${o.text}" — ${o.handled ? 'Addressed' : 'Unresolved'}: ${o.response}`);
+      }
+    }
+    const nextSteps = s.next_steps as Array<{ text: string; owner: string; due: string }> | undefined;
+    if (nextSteps?.length) {
+      lines.push(`\n## Next Steps`);
+      for (const ns of nextSteps) {
+        lines.push(`- [ ] ${ns.text} (Owner: ${ns.owner}, Due: ${ns.due})`);
+      }
+    }
+    if (s.deal_stage) lines.push(`\n## Deal Stage\n${String(s.deal_stage)} — ${Number(s.deal_score)}% complete`);
+    const coaching = s.coaching as Array<{ note: string }> | undefined;
+    if (coaching?.length) {
+      lines.push(`\n## Coaching Notes`);
+      for (const c of coaching) lines.push(`- ${c.note}`);
+    }
+    return lines.join('\n');
+  }, []);
+
+  const formatForCRM = useCallback((s: Record<string, unknown>) => {
+    const lines: string[] = [];
+    if (s.summary_text) lines.push(`SUMMARY: ${String(s.summary_text)}`);
+    const meddic = s.meddic_state as Record<string, string> | undefined;
+    if (meddic) {
+      lines.push(`\nMEDDIC SCORECARD:`);
+      for (const [k, v] of Object.entries(meddic)) {
+        const label = MEDDIC_LABELS[k] || k;
+        lines.push(`  ${label}: ${v || 'Not captured'}`);
+      }
+    }
+    const objections = s.objections as Array<{ text: string; handled: boolean; response: string }> | undefined;
+    if (objections?.length) {
+      lines.push(`\nOBJECTIONS:`);
+      for (const o of objections) {
+        lines.push(`  "${o.text}" [${o.handled ? 'Addressed' : 'Unresolved'}] ${o.response}`);
+      }
+    }
+    const nextSteps = s.next_steps as Array<{ text: string; owner: string; due: string }> | undefined;
+    if (nextSteps?.length) {
+      lines.push(`\nNEXT STEPS:`);
+      for (const ns of nextSteps) {
+        lines.push(`  - ${ns.text} | Owner: ${ns.owner} | Due: ${ns.due}`);
+      }
+    }
+    if (s.deal_stage) lines.push(`\nDEAL STAGE: ${String(s.deal_stage)} (${Number(s.deal_score)}%)`);
+    const coaching = s.coaching as Array<{ note: string }> | undefined;
+    if (coaching?.length) {
+      lines.push(`\nCOACHING:`);
+      for (const c of coaching) lines.push(`  - ${c.note}`);
+    }
+    return lines.join('\n');
+  }, []);
+
+  async function handleCopyClipboard() {
+    const s = (detail?.summary as Record<string, unknown>) || null;
+    if (!s) return;
+    await navigator.clipboard.writeText(formatAsMarkdown(s));
+    setCopiedClipboard(true);
+    setTimeout(() => setCopiedClipboard(false), 2000);
+  }
+
+  async function handleCopyCRM() {
+    const s = (detail?.summary as Record<string, unknown>) || null;
+    if (!s) return;
+    await navigator.clipboard.writeText(formatForCRM(s));
+    setCopiedCRM(true);
+    setTimeout(() => setCopiedCRM(false), 2000);
+  }
 
   useEffect(() => {
     async function load() {
@@ -108,6 +194,24 @@ export default function PostCall() {
         <h1 className="text-2xl font-bold text-dark-text font-display tracking-[-0.01em]">
           {(detail.name as string) || 'Call'}
         </h1>
+        {summary && (
+          <div className="flex items-center gap-2 mt-3">
+            <button
+              onClick={handleCopyClipboard}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-dark-label bg-dark-card border border-dark-border rounded-lg hover:border-indigo-500/30 hover:text-indigo-400 transition-colors"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              {copiedClipboard ? 'Copied!' : 'Copy to clipboard'}
+            </button>
+            <button
+              onClick={handleCopyCRM}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-dark-label bg-dark-card border border-dark-border rounded-lg hover:border-indigo-500/30 hover:text-indigo-400 transition-colors"
+            >
+              <ClipboardList className="w-3.5 h-3.5" />
+              {copiedCRM ? 'Copied!' : 'Copy for CRM'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Two-column grid */}
