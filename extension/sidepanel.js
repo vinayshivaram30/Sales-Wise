@@ -147,15 +147,96 @@ document.getElementById('start-btn').addEventListener('click', () => {
   doStartCall(selectedId);
 });
 
-function doStartCall(cid) {
-  chrome.runtime.sendMessage({ type: 'START_CALL', callId: cid, token }, (res) => {
-    if (chrome.runtime.lastError) {
-      console.error(chrome.runtime.lastError);
+function buildTutorialOverlay() {
+  const overlay = document.createElement('div');
+  overlay.id = 'audio-tutorial';
+
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'padding:16px;background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;margin:12px;color:#e0e0e0;font-size:13px';
+
+  const heading = document.createElement('h3');
+  heading.textContent = 'Before you start';
+  heading.style.cssText = 'margin:0 0 12px;color:#818cf8;font-size:15px;font-weight:600';
+  wrapper.appendChild(heading);
+
+  const intro = document.createElement('p');
+  intro.style.cssText = 'margin:0 0 10px;line-height:1.5';
+  intro.textContent = 'Chrome will ask to share this tab. For live coaching to work:';
+  wrapper.appendChild(intro);
+
+  const stepsBox = document.createElement('div');
+  stepsBox.style.cssText = 'background:#0f0f1e;border:1px solid #2a2a4a;border-radius:8px;padding:12px;margin:0 0 12px';
+
+  function makeStep(num, text, highlight) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px';
+    const badge = document.createElement('span');
+    badge.textContent = num;
+    badge.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;background:#818cf8;color:white;border-radius:50%;font-size:11px;font-weight:700;flex-shrink:0';
+    const label = document.createElement('span');
+    if (highlight) {
+      label.textContent = text.split(highlight)[0];
+      const strong = document.createElement('strong');
+      strong.textContent = highlight;
+      strong.style.color = '#f97316';
+      label.appendChild(strong);
+      const rest = text.split(highlight)[1];
+      if (rest) label.appendChild(document.createTextNode(rest));
+    } else {
+      label.textContent = text;
+    }
+    row.appendChild(badge);
+    row.appendChild(label);
+    return row;
+  }
+
+  stepsBox.appendChild(makeStep('1', 'Select the Google Meet tab in the dialog'));
+  stepsBox.appendChild(makeStep('2', 'Check "Also share tab audio" at the bottom', '"Also share tab audio"'));
+  stepsBox.lastChild.style.marginBottom = '0';
+  wrapper.appendChild(stepsBox);
+
+  const note = document.createElement('p');
+  note.textContent = 'Without tab audio, Sales-Wise can\'t hear the conversation.';
+  note.style.cssText = 'margin:0 0 14px;font-size:11px;color:#9ca3af';
+  wrapper.appendChild(note);
+
+  const btn = document.createElement('button');
+  btn.id = 'audio-tutorial-continue';
+  btn.textContent = 'Got it — start copilot';
+  btn.style.cssText = 'width:100%;padding:10px;background:#818cf8;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer';
+  wrapper.appendChild(btn);
+
+  overlay.appendChild(wrapper);
+  return overlay;
+}
+
+function showAudioTutorial(onContinue) {
+  chrome.storage.local.get(['audio_tutorial_seen'], (res) => {
+    if (res.audio_tutorial_seen) {
+      onContinue();
       return;
     }
-    callId = cid;
-    document.getElementById('start-btn').style.display = 'none';
-    document.getElementById('call-select-wrap').style.display = 'none';
+    const overlay = buildTutorialOverlay();
+    document.body.insertBefore(overlay, document.getElementById('status-msg'));
+    document.getElementById('audio-tutorial-continue').addEventListener('click', () => {
+      chrome.storage.local.set({ audio_tutorial_seen: true });
+      overlay.remove();
+      onContinue();
+    });
+  });
+}
+
+function doStartCall(cid) {
+  showAudioTutorial(() => {
+    chrome.runtime.sendMessage({ type: 'START_CALL', callId: cid, token }, (res) => {
+      if (chrome.runtime.lastError) {
+        console.error(chrome.runtime.lastError);
+        return;
+      }
+      callId = cid;
+      document.getElementById('start-btn').style.display = 'none';
+      document.getElementById('call-select-wrap').style.display = 'none';
+    });
   });
 }
 
