@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
-import { generatePlan, getPlan, updateCall, getCallDetail } from '../lib/api';
+import { generatePlan, getPlan, updateCall, getCallDetail, getProductDefaults } from '../lib/api';
 import CallProgressBar from '../components/CallProgressBar';
 import { MEDDIC_LABELS } from '../lib/constants';
 
@@ -100,6 +100,25 @@ export default function PreCall() {
   const [callIdState, setCallIdState] = useState<string | null>(callId || null);
   const [meetUrl, setMeetUrl] = useState('');
   const [showDealDetails, setShowDealDetails] = useState(false);
+  const [hasDefaults, setHasDefaults] = useState(false);
+
+  // Load product defaults once on mount
+  useEffect(() => {
+    getProductDefaults().then(defaults => {
+      const fields = ['product_name', 'category', 'core_value_proposition', 'pricing', 'key_differentiators', 'known_objections'] as const;
+      const hasAny = fields.some(f => defaults[f]);
+      if (hasAny) {
+        setHasDefaults(true);
+        setCtx(prev => {
+          const merged = { ...prev };
+          for (const f of fields) {
+            if (defaults[f] && !prev[f]) (merged as Record<string, unknown>)[f] = defaults[f];
+          }
+          return merged;
+        });
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (callId) setCallIdState(callId);
@@ -283,7 +302,10 @@ export default function PreCall() {
             </SectionCard>
 
             {/* 2. Product Context — collapsible, auto-open if key fields empty */}
-            <SectionCard title="PRODUCT / SERVICE CONTEXT" required collapsible defaultOpen={!ctx.product_name || !ctx.core_value_proposition}>
+            <SectionCard title="PRODUCT / SERVICE CONTEXT" required={false} collapsible defaultOpen={!ctx.product_name || !ctx.core_value_proposition}>
+              {hasDefaults && (
+                <p className="text-xs text-accent mb-3">Pre-filled from your saved defaults</p>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FieldBox label="Product name" value={ctx.product_name || ''} onChange={set('product_name')} placeholder="Velaris (Revenue Intelligence Platform)" />
                 <FieldBox label="Category" value={ctx.category || ''} onChange={set('category')} placeholder="B2B SaaS · Revenue Operations" />

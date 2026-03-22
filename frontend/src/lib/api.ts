@@ -76,6 +76,14 @@ export async function disconnectCrm() {
   return request(`${BASE}/crm/salesforce/disconnect`, { method: 'DELETE' });
 }
 
+export async function getProductDefaults() {
+  return request(`${BASE}/profiles/product-defaults`);
+}
+
+export async function updateProductDefaults(data: object) {
+  return request(`${BASE}/profiles/product-defaults`, { method: 'PUT', body: JSON.stringify(data) });
+}
+
 export function getCrmAuthorizeUrl() {
   return `${BASE}/crm/salesforce/authorize`;
 }
