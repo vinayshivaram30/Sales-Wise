@@ -9,13 +9,12 @@ export default function Login() {
     try {
       setLoginStatus("Signing in...");
       setLoginError('');
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+      const apiUrl = import.meta.env.DEV ? (import.meta.env.VITE_API_URL || "http://localhost:8000") : "/api";
       const res = await fetch(
         `${apiUrl}/auth/google`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
           body: JSON.stringify({ id_token: cred.credential }),
         }
       );

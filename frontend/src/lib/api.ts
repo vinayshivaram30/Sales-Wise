@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const BASE = import.meta.env.DEV ? (import.meta.env.VITE_API_URL || 'http://localhost:8000') : '/api';
 
 function authHeaders(): Record<string, string> {
   const token = localStorage.getItem('token');
@@ -6,16 +6,10 @@ function authHeaders(): Record<string, string> {
 }
 
 async function request(url: string, opts: RequestInit = {}) {
-  let r: Response;
-  try {
-    r = await fetch(url, {
-      ...opts,
-      headers: { ...authHeaders(), ...(opts.headers || {}) },
-    });
-  } catch (networkErr) {
-    console.error('[api] Network error:', { url, method: opts.method || 'GET', error: String(networkErr) });
-    throw new Error(`Network error: ${String(networkErr)}`);
-  }
+  const r = await fetch(url, {
+    ...opts,
+    headers: { ...authHeaders(), ...(opts.headers || {}) },
+  });
   const text = await r.text();
   if (!r.ok) {
     if (r.status === 401) {
