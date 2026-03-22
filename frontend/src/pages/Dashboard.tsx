@@ -49,6 +49,7 @@ export default function Dashboard() {
   async function handleStartCall() {
     if (!callName.trim()) return;
     setCreating(true);
+    setError('');
     try {
       const call = await createCall({
         name: callName.trim(),
@@ -57,6 +58,8 @@ export default function Dashboard() {
         goal: 'Discovery',
       });
       navigate(`/calls/${call.id}/precall`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create call');
     } finally {
       setCreating(false);
     }
@@ -141,6 +144,9 @@ export default function Dashboard() {
             Start New Call
           </button>
         </div>
+        {error && (
+          <p className="mt-3 text-sm text-danger">{error}</p>
+        )}
       </div>
 
       {/* Stats row */}
