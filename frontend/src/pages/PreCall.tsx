@@ -32,34 +32,7 @@ type PrecallContext = {
   open_objections_from_history?: string;
 };
 
-const defaultContext: PrecallContext = {
-  company: 'Fieldmotion · B2B SaaS · Field service management · 220 employees',
-  contact: 'Priya Nair · VP of Sales · 4 yrs tenure · Reports to CRO',
-  sales_team_size: '8 AEs + 3 SDRs · Quota: $1.2M ARR/AE · ~68% attainment',
-  current_stack: 'Salesforce CRM · Outreach · Zoom · No coaching tool',
-  known_pain: 'Reps spend ~40 min/day on CRM updates. Pipeline reviews feel like guesswork.',
-  deal_stage: 'Stage 2 — Discovery (first call was SDR intro)',
-  deal_size_est: '$14,400–$28,800 ARR',
-  decision_timeline: 'Q3 budget cycle',
-  economic_buyer: 'CRO (not yet engaged)',
-  champion_likelihood: 'High — Priya raised pain unprompted',
-  product_name: 'Velaris (Revenue Intelligence Platform)',
-  category: 'B2B SaaS · Revenue Operations',
-  core_value_proposition: 'Consolidates pipeline, call recordings, CRM into single dashboard — eliminates manual updates',
-  pricing: '$180/seat/month · 5-seat minimum · Annual contract',
-  key_differentiators: 'Real-time live-call coaching vs Gong post-call only. Native Salesforce write-back.',
-  known_objections: 'Budget concerns, adoption friction, security/compliance',
-  product_tags: ['MEDDIC-aligned', 'Challenger sell', 'Economic buyer focus'],
-  primary_goal: 'Qualify economic buyer. Get Priya to commit to 3-way call with CRO.',
-  secondary_goal: 'Surface business impact of 68% attainment — translate pain to dollar figure.',
-  demo_focus: 'Show live-call coaching first (10 min). Defer CRM automation unless asked.',
-  objection_to_preempt: 'Address bad past experience with coaching tool proactively.',
-  exit_criteria: 'CRO intro scheduled, or Priya sends business case email. No "I\'ll think about it".',
-  past_conversations: [
-    { date: '14 Mar 2026', type: 'SDR intro call', duration: '18 min', channel: 'Zoom', content: 'Priya mentioned reps waste time on CRM. Interested in live coaching.', outcome: 'Demo booked' }
-  ],
-  open_objections_from_history: 'Bad past experience with a coaching tool · Economic buyer not looped in yet',
-};
+const emptyContext: PrecallContext = {};
 
 function SectionCard({ title, required, children, collapsible, defaultOpen = true }: { title: string; required?: boolean; children: React.ReactNode; collapsible?: boolean; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -119,15 +92,14 @@ function GoalItem({ label, color, value, onChange, placeholder }: { label: strin
 
 export default function PreCall() {
   const { callId } = useParams<{ callId: string }>();
-  const [ctx, setCtx] = useState<PrecallContext>(defaultContext);
+  const [ctx, setCtx] = useState<PrecallContext>(emptyContext);
+  const [quickMode, setQuickMode] = useState(true);
   const [plan, setPlan] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(false);
   const [planError, setPlanError] = useState('');
   const [callIdState, setCallIdState] = useState<string | null>(callId || null);
   const [meetUrl, setMeetUrl] = useState('');
-  const [showDealDetails, setShowDealDetails] = useState(() =>
-    !!(ctx.deal_size_est || ctx.decision_timeline || ctx.economic_buyer || ctx.champion_likelihood)
-  );
+  const [showDealDetails, setShowDealDetails] = useState(false);
 
   useEffect(() => {
     if (callId) setCallIdState(callId);
@@ -137,7 +109,6 @@ export default function PreCall() {
     if (!callIdState) return;
     getCallDetail(callIdState).then(c => {
       const merged: PrecallContext = {
-        ...defaultContext,
         company: (c.company as string) ?? '',
         contact: (c.contact as string) ?? '',
         sales_team_size: (c.sales_team_size as string) ?? '',
@@ -242,7 +213,7 @@ export default function PreCall() {
 
   const set = (k: keyof PrecallContext) => (v: string | string[]) => setCtx(prev => ({ ...prev, [k]: v }));
 
-  const hasRequired = ctx.company && ctx.contact && ctx.product_name && ctx.core_value_proposition && ctx.primary_goal;
+  const hasRequired = ctx.company && ctx.contact && ctx.primary_goal;
 
   if (!callIdState) return (
     <div className="p-8 text-dark-text">
@@ -263,15 +234,35 @@ export default function PreCall() {
           <div>
             <h1 className="text-2xl font-bold font-display tracking-[-0.01em] mb-6">Pre-call setup</h1>
 
-            {/* 1. Customer / Company Context */}
-            <SectionCard title="CUSTOMER / COMPANY CONTEXT" required>
+            {/* Essential fields — always visible */}
+            <SectionCard title="CALL ESSENTIALS" required>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FieldBox label="Company" value={ctx.company || ''} onChange={set('company')} placeholder="Fieldmotion · B2B SaaS · Field service management · 220 employees" />
-                <FieldBox label="Contact" value={ctx.contact || ''} onChange={set('contact')} placeholder="Priya Nair · VP of Sales · 4 yrs tenure · Reports to CRO" />
-                <FieldBox label="Sales team size" value={ctx.sales_team_size || ''} onChange={set('sales_team_size')} placeholder="8 AEs + 3 SDRs · Quota: $1.2M ARR/AE · ~68% attainment" />
-                <FieldBox label="Current stack" value={ctx.current_stack || ''} onChange={set('current_stack')} placeholder="Salesforce CRM · Outreach · Zoom · No coaching tool" />
+                <FieldBox label="Company" value={ctx.company || ''} onChange={set('company')} placeholder="Acme Corp · B2B SaaS · 200 employees" />
+                <FieldBox label="Contact" value={ctx.contact || ''} onChange={set('contact')} placeholder="Jane Smith · VP of Sales" />
+              </div>
+              <div className="mt-2">
+                <FieldBox label="Primary goal" value={ctx.primary_goal || ''} onChange={set('primary_goal')} rows={2} placeholder="Qualify economic buyer. Get commitment for follow-up demo." />
+              </div>
+            </SectionCard>
+
+            {/* Quick/Full mode toggle */}
+            <button
+              onClick={() => setQuickMode(q => !q)}
+              className="mb-6 text-sm text-accent hover:text-accent-hover transition-colors flex items-center gap-1.5"
+            >
+              <ChevronDown className={`w-4 h-4 transition-transform ${quickMode ? '-rotate-90' : 'rotate-0'}`} />
+              {quickMode ? 'Show all fields (company details, product, objectives, history)' : 'Hide additional fields'}
+            </button>
+
+            {!quickMode && (
+            <>
+            {/* 1. Customer / Company Context */}
+            <SectionCard title="COMPANY DETAILS" required={false}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FieldBox label="Sales team size" value={ctx.sales_team_size || ''} onChange={set('sales_team_size')} placeholder="8 AEs + 3 SDRs · Quota: $1.2M ARR/AE" />
+                <FieldBox label="Current stack" value={ctx.current_stack || ''} onChange={set('current_stack')} placeholder="Salesforce CRM · Outreach · Zoom" />
                 <FieldBox label="Known pain" value={ctx.known_pain || ''} onChange={set('known_pain')} rows={2} placeholder="Reps spend ~40 min/day on CRM. Pipeline reviews feel like guesswork." />
-                <FieldBox label="Deal stage" value={ctx.deal_stage || ''} onChange={set('deal_stage')} placeholder="Stage 2 — Discovery (first call was SDR intro)" />
+                <FieldBox label="Deal stage" value={ctx.deal_stage || ''} onChange={set('deal_stage')} placeholder="Stage 2 — Discovery" />
               </div>
               {!showDealDetails ? (
                 <button
@@ -303,24 +294,21 @@ export default function PreCall() {
                 <FieldBox label="Key differentiators" value={ctx.key_differentiators || ''} onChange={set('key_differentiators')} rows={2} placeholder="Real-time live-call coaching vs Gong's post-call only. Native Salesforce write-back." />
                 <FieldBox label="Known objections we handle" value={ctx.known_objections || ''} onChange={set('known_objections')} rows={2} placeholder="Budget, adoption, security" />
               </div>
-              <div className="flex gap-2 mt-4 flex-wrap">
-                {['MEDDIC-aligned', 'Challenger sell', 'Economic buyer focus'].map(tag => (
-                  <span key={tag} className={`text-xs px-2.5 py-1 rounded-md ${
-                    tag === 'MEDDIC-aligned' ? 'bg-purple-500/20 text-purple-500' :
-                    tag === 'Challenger sell' ? 'bg-warning/20 text-warning' :
-                    'bg-teal-500/20 text-teal-500'
-                  }`}>{tag}</span>
-                ))}
-              </div>
+              {(ctx.product_tags || []).length > 0 && (
+                <div className="flex gap-2 mt-4 flex-wrap">
+                  {(ctx.product_tags || []).map(tag => (
+                    <span key={tag} className="text-xs px-2.5 py-1 rounded-md bg-purple-500/20 text-purple-500">{tag}</span>
+                  ))}
+                </div>
+              )}
             </SectionCard>
 
             {/* 3. Objectives / Goals */}
-            <SectionCard title="OBJECTIVES / GOALS" required>
-              <GoalItem label="Primary goal" color="bg-danger" value={ctx.primary_goal || ''} onChange={set('primary_goal')} placeholder="Qualify economic buyer. Get Priya to commit to 3-way call with CRO." />
-              <GoalItem label="Secondary goal" color="bg-danger" value={ctx.secondary_goal || ''} onChange={set('secondary_goal')} placeholder="Surface business impact of 68% attainment — translate pain to dollar figure." />
-              <GoalItem label="Demo focus" color="bg-warning" value={ctx.demo_focus || ''} onChange={set('demo_focus')} placeholder="Show live-call coaching first (10 min). Defer CRM automation unless asked." />
-              <GoalItem label="Objection to pre-empt" color="bg-warning" value={ctx.objection_to_preempt || ''} onChange={set('objection_to_preempt')} placeholder="Address bad past experience with coaching tool proactively." />
-              <GoalItem label="Exit criteria" color="bg-success" value={ctx.exit_criteria || ''} onChange={set('exit_criteria')} placeholder="CRO intro scheduled, or Priya sends business case email. No 'I'll think about it'." />
+            <SectionCard title="OBJECTIVES / GOALS" required={false}>
+              <GoalItem label="Secondary goal" color="bg-danger" value={ctx.secondary_goal || ''} onChange={set('secondary_goal')} placeholder="Surface business impact — translate pain to dollar figure." />
+              <GoalItem label="Demo focus" color="bg-warning" value={ctx.demo_focus || ''} onChange={set('demo_focus')} placeholder="Show live-call coaching first. Defer CRM unless asked." />
+              <GoalItem label="Objection to pre-empt" color="bg-warning" value={ctx.objection_to_preempt || ''} onChange={set('objection_to_preempt')} placeholder="Address known concerns proactively." />
+              <GoalItem label="Exit criteria" color="bg-success" value={ctx.exit_criteria || ''} onChange={set('exit_criteria')} placeholder="Intro to decision maker scheduled. No 'I'll think about it'." />
             </SectionCard>
 
             {/* 4. Past Conversations — collapsed by default */}
@@ -371,6 +359,8 @@ export default function PreCall() {
               </button>
               <FieldBox label="Open objections from history" value={ctx.open_objections_from_history || ''} onChange={set('open_objections_from_history')} placeholder="Bad past experience with coaching tool · Economic buyer not looped in" />
             </SectionCard>
+            </>
+            )}
 
             <button onClick={handleGenerate} disabled={loading || !hasRequired}
               className="w-full py-3.5 bg-accent text-white rounded-[10px] text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent-hover transition-colors cursor-pointer">
