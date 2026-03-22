@@ -8,6 +8,7 @@ function authHeaders(): Record<string, string> {
 async function request(url: string, opts: RequestInit = {}) {
   const r = await fetch(url, {
     ...opts,
+    credentials: 'include',
     headers: { ...authHeaders(), ...(opts.headers || {}) },
   });
   const text = await r.text();
