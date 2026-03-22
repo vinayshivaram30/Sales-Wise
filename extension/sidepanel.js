@@ -111,19 +111,6 @@ function showStatus(msg) {
   if (el) { el.textContent = msg; el.style.display = msg ? 'block' : 'none'; }
 }
 
-function sendManualTranscript() {
-  const input = document.getElementById('manual-input');
-  const text = input.value.trim();
-  if (!text) return;
-  showStatus('Sending to AI...');
-  chrome.runtime.sendMessage({ type: 'MANUAL_TRANSCRIPT', text });
-  input.value = '';
-}
-
-document.getElementById('manual-send').addEventListener('click', sendManualTranscript);
-document.getElementById('manual-input').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') sendManualTranscript();
-});
 
 document.getElementById('call-select').addEventListener('change', (e) => {
   callId = e.target.value || null;
@@ -201,8 +188,7 @@ document.getElementById('end-btn').addEventListener('click', async () => {
       document.getElementById('call-select-wrap').style.display = 'block';
       document.getElementById('meddic').style.display = 'none';
       document.getElementById('transcript').style.display = 'none';
-      document.getElementById('manual-input-wrap').style.display = 'none';
-      const sugArea = document.getElementById('suggestion-area');
+        const sugArea = document.getElementById('suggestion-area');
       while (sugArea.firstChild) sugArea.removeChild(sugArea.firstChild);
       const txLines = document.getElementById('transcript-lines');
       if (txLines) while (txLines.firstChild) txLines.removeChild(txLines.firstChild);
@@ -244,35 +230,32 @@ function renderPostCallSummary(detail) {
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === 'WS_CONNECTED') {
     setLive(true);
-    showStatus('Connected. Waiting for audio or type below to test...');
+    showStatus('Connected. Waiting for audio...');
     document.getElementById('meddic').style.display = 'block';
     document.getElementById('transcript').style.display = 'block';
     document.getElementById('end-btn').style.display = 'block';
-    document.getElementById('manual-input-wrap').style.display = 'block';
     document.getElementById('postcall-summary').style.display = 'none';
   }
 
   if (msg.type === 'WS_DISCONNECTED') {
     document.getElementById('end-btn').style.display = 'none';
-    document.getElementById('manual-input-wrap').style.display = 'none';
     showStatus('Disconnected from server.');
     setLive(false);
   }
 
   if (msg.type === 'WS_ERROR') {
     document.getElementById('end-btn').style.display = 'none';
-    document.getElementById('manual-input-wrap').style.display = 'none';
     showStatus('WebSocket error — check if the backend is running.');
     setLive(false);
   }
 
   if (msg.type === 'AUDIO_MISSING_CHECKBOX') {
     document.getElementById('audio-warning').style.display = 'block';
-    showStatus('No tab audio detected. Use the text input below to test.');
+    showStatus('No tab audio detected. Please share tab audio.');
   }
 
   if (msg.type === 'AUDIO_CAPTURE_FAILED') {
-    showStatus(msg.error || 'Audio capture failed. Use the text input below to test.');
+    showStatus(msg.error || 'Audio capture failed. Please try again.');
   }
 
   if (msg.type === 'error') {
