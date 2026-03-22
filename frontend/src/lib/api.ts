@@ -6,10 +6,16 @@ function authHeaders(): Record<string, string> {
 }
 
 async function request(url: string, opts: RequestInit = {}) {
-  const r = await fetch(url, {
-    ...opts,
-    headers: { ...authHeaders(), ...(opts.headers || {}) },
-  });
+  let r: Response;
+  try {
+    r = await fetch(url, {
+      ...opts,
+      headers: { ...authHeaders(), ...(opts.headers || {}) },
+    });
+  } catch (networkErr) {
+    console.error('[api] Network error:', { url, method: opts.method || 'GET', error: String(networkErr) });
+    throw new Error(`Network error: ${String(networkErr)}`);
+  }
   const text = await r.text();
   if (!r.ok) {
     if (r.status === 401) {
