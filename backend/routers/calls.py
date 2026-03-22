@@ -15,19 +15,22 @@ def _get_token(authorization: str) -> str:
 async def create_call(body: CallCreate, authorization: str = Header("")):
     user_id = await require_user_id(authorization)
     db = get_user_client(_get_token(authorization))
-    result = db.table("calls").insert({
-        "user_id": user_id,
-        "name": body.name,
-        "contact_name": body.contact_name or "",
-        "company_name": body.company_name or "",
-        "goal": body.goal or "Discovery",
-        "framework": body.framework or "MEDDIC",
-        "product_ctx": body.product_ctx,
-        "company_ctx": body.company_ctx,
-        "past_context": body.past_context,
-        "status": "created"
-    }).execute()
-    return result.data[0]
+    try:
+        result = db.table("calls").insert({
+            "user_id": user_id,
+            "name": body.name,
+            "contact_name": body.contact_name or "",
+            "company_name": body.company_name or "",
+            "goal": body.goal or "Discovery",
+            "framework": body.framework or "MEDDIC",
+            "product_ctx": body.product_ctx,
+            "company_ctx": body.company_ctx,
+            "past_context": body.past_context,
+            "status": "created"
+        }).execute()
+        return result.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create call: {str(e)}")
 
 
 @router.patch("/{call_id}")
